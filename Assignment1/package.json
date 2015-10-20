@@ -1,0 +1,25 @@
+{
+  "name": "tweetsgeomap",
+  "version": "0.0.1",
+  "description": "Server which renders real time twitter data on a map",
+  "scripts": {
+    "start": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "author": "Sahana Subbanna <ss4737@columbia.edu>",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^1.4.2",
+    "aws-sdk": "^2.2.10",
+    "body-parser": "^1.14.1",
+    "express": "^4.13.3",
+    "mongoose": "^4.0.8",
+    "mongoose-auto-increment": "^4.0.0",
+    "morgan": "^1.6.1",
+    "npm": "^3.3.8",
+    "request": "^2.65.0",
+    "superagent": "^1.4.0",
+    "twit": "^2.1.0"
+  }
+}
