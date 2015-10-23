@@ -14,6 +14,7 @@ const database = require('./config/database');
 const tweetModel = require('./model/tweetSchema');
 const twitterStreamRoutes = require('./routes/twitterStreamRoutes');
 const path = require('path');
+const jade = require('jade');
 
 let app = express();
 
@@ -22,9 +23,11 @@ app.set('port', process.env.PORT || 4000);
 let dbURL = process.env.dbURL || database.url; 
 
 //Setting up middleware services
-app.use(logger('Tweets!!!'));
+app.use(express.static('public'));
+app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
+// app.set('view engine', 'jade');
 
 //app.use('/tweetsgeomap', twitterStreamRoutes);
 
@@ -47,7 +50,33 @@ var stream = T.stream('statuses/sample');
 io.on('connection', function (socket) {
   stream.on('tweet', function(tweet) {
   	// console.log(tweet);
-    socket.emit('info', { tweet: tweet});
+
+  	if (tweet.coordinates != null) {
+	  	let newTweet = new tweetModel.tweetCollection({ 
+	  		tweet_id: tweet.id_str, 
+	  		twitterHandle: tweet.user.screen_name, 
+	  		user_id: tweet.user.id_str,
+	  		user_profile_img_url: tweet.user.profile_image_url,
+	  		user_verified: tweet.user.verified, 
+	  		text: tweet.text,
+	  		latLong: tweet.coordinates.coordinates,
+			tags: tweet.entities.hashtags,
+			favorite_count: tweet.favorite_count,
+			retweet_count: tweet.retweet_count,
+			created_at: tweet.created_at,
+			timestamp: tweet.timestamp_ms
+		});
+
+		newTweet.save(function (err) {
+	  		if(err) { 
+	  			return console.log(err); 
+	  		}
+	  		console.log('Ta-da! Saved to DB');
+		});
+
+    	socket.emit('info', { tweet: tweet});
+    }
+
   });
 });
 
@@ -56,15 +85,9 @@ io.on('connection', function (socket) {
 //Connect to DB
 app.get('/', function(req, res){
 	res.sendFile(path.join(__dirname, './views', 'index.html'));
+	// res.render('index', { title: 'TweetsGeoMap' });
 });
 
-// // Send current time to all connected clients
-// function sendTime() {
-//     io.emit('time', { time: new Date().toJSON() });
-// }
-
-// Send current time every 10 secs
-// setInterval(sendTime, 10000);
 
 // Emit welcome message on connection
 io.on('connection', function(socket) {
