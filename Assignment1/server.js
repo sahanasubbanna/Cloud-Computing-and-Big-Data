@@ -47,41 +47,6 @@ var T = new twit({
 var io = require('socket.io').listen(server);
 var stream = T.stream('statuses/sample');
 
-io.on('connection', function (socket) {
-  stream.on('tweet', function(tweet) {
-  	// console.log(tweet);
-
-  	if (tweet.coordinates != null) {
-	  	let newTweet = new tweetModel.tweetCollection({ 
-	  		tweet_id: tweet.id_str, 
-	  		twitterHandle: tweet.user.screen_name, 
-	  		user_id: tweet.user.id_str,
-	  		user_profile_img_url: tweet.user.profile_image_url,
-	  		user_verified: tweet.user.verified, 
-	  		text: tweet.text,
-	  		latLong: tweet.coordinates.coordinates,
-			tags: tweet.entities.hashtags,
-			favorite_count: tweet.favorite_count,
-			retweet_count: tweet.retweet_count,
-			created_at: tweet.created_at,
-			timestamp: tweet.timestamp_ms
-		});
-
-		newTweet.save(function (err) {
-	  		if(err) { 
-	  			return console.log(err); 
-	  		}
-	  		console.log('Ta-da! Saved to DB');
-		});
-
-    	socket.emit('info', { tweet: tweet});
-    }
-
-  });
-});
-
-
-
 //Connect to DB
 app.get('/', function(req, res){
 	res.sendFile(path.join(__dirname, './views', 'index.html'));
@@ -95,4 +60,51 @@ io.on('connection', function(socket) {
     socket.emit('welcome', { message: 'Welcome!', id: socket.id });
 
     socket.on('i am client', console.log);
+});
+
+
+ //For the first time, Get the data from the database and populate it on the map.
+io.on('connection', function(socket) {
+    //Get the data from the database
+
+    tweetModel.tweetCollection.scan().limit(100).exec((err, tweets, lastKey) => {
+    	console.log(tweets);
+    	for( let index = 0; index < tweets.length; index++ ) {
+    		console.log(index, tweets[index].twitterHandle);
+			socket.emit('info', { tweet: tweets[index] });			
+    	}
+
+
+    	//Start the streaming
+    	stream.on('tweet', function(tweet) {
+		  	// console.log(tweet);
+		  	if (tweet.coordinates != null) {
+		  		let tweetObject = { 
+			  		tweet_id: tweet.id_str, 
+			  		twitterHandle: tweet.user.screen_name, 
+			  		user_id: tweet.user.id_str,
+			  		user_profile_img_url: tweet.user.profile_image_url,
+			  		user_verified: tweet.user.verified, 
+			  		text: tweet.text,
+			  		latLong: tweet.coordinates.coordinates,
+					tags: tweet.entities.hashtags,
+					favorite_count: tweet.favorite_count,
+					retweet_count: tweet.retweet_count,
+					created_at: tweet.created_at,
+					timestamp: tweet.timestamp_ms
+				};
+
+			  	let newTweet = new tweetModel.tweetCollection(tweetObject);
+
+				newTweet.save(function (err) {
+			  		if(err) { 
+			  			return console.log(err); 
+			  		}
+			  		console.log('Ta-da! Saved to DB');
+				});
+
+		    	socket.emit('info', { tweet: tweetObject});
+	    	}
+    	});
+    });
 });

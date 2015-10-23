@@ -21,7 +21,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="A front-end template that helps you build fast, modern mobile web apps.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Material Design Lite</title>
+    <title>TweetsGeoMap</title>
 
     <!-- Add to homescreen for Chrome on Android -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -64,7 +64,7 @@
     <div class="demo-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
       <header class="demo-header mdl-layout__header mdl-color--white mdl-color--grey-100 mdl-color-text--grey-600">
         <div class="mdl-layout__header-row">
-          <span class="mdl-layout-title">Home</span>
+          <span class="mdl-layout-title">TweetsGeoMap</span>
           <div class="mdl-layout-spacer"></div>
           <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
             <label class="mdl-button mdl-js-button mdl-button--icon" for="search">
@@ -118,8 +118,8 @@
       </div>
       <main class="mdl-layout__content mdl-color--grey-100">
         <div class="mdl-grid demo-content">
-          <div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">
-            <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop">
+          <div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid" width="800px;">
+           <!--  <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop">
               <use xlink:href="#piechart" mask="url(#piemask)" />
               <text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>
             </svg>
@@ -134,9 +134,9 @@
             <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop">
               <use xlink:href="#piechart" mask="url(#piemask)" />
               <text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>
-            </svg>
+            </svg> -->
           </div>
-          <div id="map" class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col"> </div>
+          <div id="map" class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col" style="max-height: 500px;"> </div>
       <!--     <div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
             <svg fill="currentColor" viewBox="0 0 500 250" class="demo-graph">
               <use xlink:href="#chart"/>
@@ -147,14 +147,14 @@
           </div> -->
           <div class="demo-cards mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing" >
             <div class="demo-updates mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--12-col-desktop">
-              <div class="mdl-card__title mdl-card--expand mdl-color--teal-300"  style="min-height: 70px;">
-                <h2 class="mdl-card__title-text"  style="min-height: 50px;">Live Tweet Stream</h2>
+              <div class="mdl-card__title mdl-card--expand mdl-color--teal-300"  style="min-height: 40px;">
+                <h2 class="mdl-card__title-text"  style="min-height: 40px;">Live Tweet Stream</h2>
               </div>
               <div id="LiveTweetStream" class="mdl-card__supporting-text mdl-color-text--grey-600" style="max-height: 400px; overflow: scroll; ">
               </div>
-              <div class="mdl-card__actions mdl-card--border">
+             <!--  <div class="mdl-card__actions mdl-card--border">
                 <a href="#" class="mdl-button mdl-js-button mdl-js-ripple-effect">Read More</a>
-              </div>
+              </div> -->
             </div>
             <div class="demo-separator mdl-cell--1-col"></div>
             <div class="demo-options mdl-card mdl-color--deep-purple-500 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
@@ -249,57 +249,85 @@
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
      <script src='/socket.io/socket.io.js'></script>
         <script>
-            var socket = io();
+            "use strict";
 
-            socket.on('welcome', function(data) {
-                addMessage(data.message);
+            let image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
 
-                // Respond with a message including this clients' id sent from the server
-                socket.emit('i am client', {data: 'foo!', id: data.id});
-            });
-
-            socket.on('info', function(data) {
-                if (data.tweet.coordinates != null) {
-                    addMessage("TweetID: " + data.tweet.id + " , User: " + data.tweet.user.id + " , Name: " + data.tweet.user.name + " , Geo: " + data.tweet.coordinates.coordinates + " , Text: " + data.tweet.text);
-                }
-            });
-
-            socket.on('error', console.error.bind(console));
-            socket.on('message', console.log.bind(console));
-
-            function addMessage(message) {
-                var text = document.createTextNode(message),
-                    el = document.createElement('li'),
-                    messages = document.getElementById('LiveTweetStream');
-
-                var len = messages.getElementsByTagName('li').length;
-                if (len > 20) {
-                    messages.removeChild(messages.lastChild);
-                }
-
-                el.appendChild(text);
-                messages.insertBefore(el, messages.firstChild);
-            }
-
+            let map;
+            let myLatlng;
             function initialize(lat,lon) {
-                var myLatlng = new google.maps.LatLng(40.807536,-73.962573);
-                var mapOptions = {
+                let myLatlng = new google.maps.LatLng(40.807536,-73.962573);
+                let mapOptions = {
                     zoom: 1,
                     center: myLatlng,
                     mapTypeId: google.maps.MapTypeId.SATELLITE,
                     tilt: 45
                 };
             
-                var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+                map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
 
-                var marker = new google.maps.Marker({
-                    position: myLatlng,
-                    map: map,
-                    title: 'Hello World!'
-                });
+                // var marker = new google.maps.Marker({
+                //     position: myLatlng,
+                //     map: map,
+                //     icon: image,
+                //     title: 'Hello World!'
+                // });
             }
 
             google.maps.event.addDomListener(window, 'load', initialize);
+            let socket = io();
+
+            socket.on('welcome', function(data) {
+                addMessage(data.message, null);
+
+                // Respond with a message including this clients' id sent from the server
+                socket.emit('i am client', {data: 'foo!', id: data.id});
+            });
+
+            socket.on('info', function(data) {
+                if (data.tweet.latLong != null) {
+                    let message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
+                    console.log(message);
+                    let icon = data.tweet.user_profile_img_url;
+                    addMessage(message, icon);
+                }
+
+                let myLatlng = new google.maps.LatLng(data.tweet.latLong[1],data.tweet.latLong[0]); //Twitter provides long first and then lat
+                console.log(data.tweet.latLong[1],data.tweet.latLong[0]);
+                let marker = new google.maps.Marker({
+                    position: myLatlng,
+                    map: map,
+                    animation: google.maps.Animation.DROP,
+                    icon: image,
+                    title: data.tweet.twitterHandle
+                });
+            });
+
+            socket.on('error', console.error.bind(console));
+            socket.on('message', console.log.bind(console));
+
+            function addMessage(message, icon) {
+                console.log("Message: " + message);
+                let text = document.createTextNode(message),
+                    el = document.createElement('div'),
+                    messages = document.getElementById('LiveTweetStream');
+
+                let len = messages.getElementsByTagName('div').length;
+                if (len > 20) {
+                    messages.removeChild(messages.lastChild);
+                }
+                el.style.border = "0px 0px 2px 0px solid";
+
+                if (icon != null) {
+                    var img = document.createElement('img');
+                    img.src = icon;
+                    el.appendChild(img);
+                }
+
+                el.appendChild(text);
+                messages.insertBefore(el, messages.firstChild);
+            }
+
       </script>
 
   </body>
