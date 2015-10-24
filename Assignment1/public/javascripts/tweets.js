@@ -43,6 +43,8 @@ socket.on('livetweet', function(livetweet) {
         //Add the latlong to heatmap data. It automatically updates the heatmap
         heatMapDataPoints.push(myLatlng);
 
+        // console.log("heatMapDataPoints Length: " + heatMapDataPoints.length);
+
         if (heatmap == undefined) {
             heatmap = new google.maps.visualization.HeatmapLayer({
                 data: heatMapDataPoints,
