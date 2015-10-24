@@ -67,11 +67,10 @@ io.on('connection', function(socket) {
 io.on('connection', function(socket) {
     //Get the data from the database
 
-    tweetModel.tweetCollection.scan().limit(100).exec((err, tweets, lastKey) => {
-    	console.log(tweets);
+    tweetModel.tweetCollection.scan().limit(3000).exec((err, tweets, lastKey) => {
     	for( let index = 0; index < tweets.length; index++ ) {
-    		console.log(index, tweets[index].twitterHandle);
-			socket.emit('info', { tweet: tweets[index] });			
+    		// console.log(index, tweets[index].twitterHandle);
+			socket.emit('dbtweet', { tweet: tweets[index] });			
     	}
 
 
@@ -103,7 +102,7 @@ io.on('connection', function(socket) {
 			  		console.log('Ta-da! Saved to DB');
 				});
 
-		    	socket.emit('info', { tweet: tweetObject});
+		    	socket.emit('livetweet', { tweet: tweetObject});
 	    	}
     	});
     });

@@ -108,12 +108,12 @@
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">delete</i>Trash</a>
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">report</i>Spam</a>
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">forum</i>Forums</a>
-          <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">flag</i>Updates</a>
+ <!--          <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">flag</i>Updates</a>
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">local_offer</i>Promos</a>
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">shopping_cart</i>Purchases</a>
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">people</i>Social</a>
           <div class="mdl-layout-spacer"></div>
-          <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">help_outline</i><span class="visuallyhidden">Help</span></a>
+          <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">help_outline</i><span class="visuallyhidden">Help</span></a> -->
         </nav>
       </div>
       <main class="mdl-layout__content mdl-color--grey-100">
@@ -136,7 +136,7 @@
               <text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>
             </svg> -->
           </div>
-          <div id="map" class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col" style="max-height: 500px;"> </div>
+          <div id="map" class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col" style="max-height: 500px; min-height: 500px;"> </div>
       <!--     <div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
             <svg fill="currentColor" viewBox="0 0 500 250" class="demo-graph">
               <use xlink:href="#chart"/>
@@ -150,13 +150,13 @@
               <div class="mdl-card__title mdl-card--expand mdl-color--teal-300"  style="min-height: 40px;">
                 <h2 class="mdl-card__title-text"  style="min-height: 40px;">Live Tweet Stream</h2>
               </div>
-              <div id="LiveTweetStream" class="mdl-card__supporting-text mdl-color-text--grey-600" style="max-height: 400px; overflow: scroll; ">
+              <div id="LiveTweetStream" class="mdl-card__supporting-text mdl-color-text--grey-600" style="min-height: 400px; max-height: 400px; overflow: scroll; ">
               </div>
              <!--  <div class="mdl-card__actions mdl-card--border">
                 <a href="#" class="mdl-button mdl-js-button mdl-js-ripple-effect">Read More</a>
               </div> -->
             </div>
-            <div class="demo-separator mdl-cell--1-col"></div>
+            <!-- <div class="demo-separator mdl-cell--1-col"></div>
             <div class="demo-options mdl-card mdl-color--deep-purple-500 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
               <div class="mdl-card__supporting-text mdl-color-text--blue-grey-50">
                 <h3>View options</h3>
@@ -191,9 +191,9 @@
                 <a href="#" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-color-text--blue-grey-50">Change location</a>
                 <div class="mdl-layout-spacer"></div>
                 <i class="material-icons">location_on</i>
-              </div>
-            </div>
-          </div>
+              </div> -->
+            <!-- </div> -->
+          <!-- </div> -->
         </div>
       </main>
     </div>
@@ -244,91 +244,101 @@
           </g>
         </defs>
       </svg>
-      <a href="https://github.com/google/material-design-lite/blob/master/templates/dashboard/" target="_blank" id="view-source" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">View Source</a>
+<!--       <a href="https://github.com/google/material-design-lite/blob/master/templates/dashboard/" target="_blank" id="view-source" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">View Source</a> -->
+
+
     <script src="/javascripts/material.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
-     <script src='/socket.io/socket.io.js'></script>
-        <script>
-            "use strict";
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/javascripts/tweets.js"></script>
 
-            let image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+    <!-- // <script> -->
+         <!--    // "use strict";
 
-            let map;
-            let myLatlng;
-            function initialize(lat,lon) {
-                let myLatlng = new google.maps.LatLng(40.807536,-73.962573);
-                let mapOptions = {
-                    zoom: 1,
-                    center: myLatlng,
-                    mapTypeId: google.maps.MapTypeId.SATELLITE,
-                    tilt: 45
-                };
+            // let image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+
+            // let map, heatmap;
+            // let myLatlng;
+            // let heatMapDataPoints = [];
+            // function initialize(lat,lon) {
+            //     let myLatlng = new google.maps.LatLng(0.000000,0.000000);
+            //     let mapOptions = {
+            //         zoom: 1,
+            //         center: myLatlng,
+            //         mapTypeId: google.maps.MapTypeId.SATELLITE,
+            //         tilt: 45
+            //     };
             
-                map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
+            //     map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
 
-                // var marker = new google.maps.Marker({
-                //     position: myLatlng,
-                //     map: map,
-                //     icon: image,
-                //     title: 'Hello World!'
-                // });
-            }
+            // }
 
-            google.maps.event.addDomListener(window, 'load', initialize);
-            let socket = io();
+            // google.maps.event.addDomListener(window, 'load', initialize);
+            // let socket = io();
 
-            socket.on('welcome', function(data) {
-                addMessage(data.message, null);
+            // socket.on('welcome', function(data) {
+            //     displayLiveTweet(data.message, null);
 
-                // Respond with a message including this clients' id sent from the server
-                socket.emit('i am client', {data: 'foo!', id: data.id});
-            });
+            //     // Respond with a message including this clients' id sent from the server
+            //     socket.emit('i am client', {data: 'foo!', id: data.id});
+            // });
 
-            socket.on('info', function(data) {
-                if (data.tweet.latLong != null) {
-                    let message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
-                    console.log(message);
-                    let icon = data.tweet.user_profile_img_url;
-                    addMessage(message, icon);
-                }
+            // socket.on('livetweet', function(livetweet) {
+            //     if (livetweet.tweet.latLong != null) {
+            //         // let message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
+            //         // console.log(message);
+            //         // let icon = data.tweet.user_profile_img_url;
+            //         displayLiveTweet(livetweet.tweet);
+            //     }
 
-                let myLatlng = new google.maps.LatLng(data.tweet.latLong[1],data.tweet.latLong[0]); //Twitter provides long first and then lat
-                console.log(data.tweet.latLong[1],data.tweet.latLong[0]);
-                let marker = new google.maps.Marker({
-                    position: myLatlng,
-                    map: map,
-                    animation: google.maps.Animation.DROP,
-                    icon: image,
-                    title: data.tweet.twitterHandle
-                });
-            });
+            //     let myLatlng = new google.maps.LatLng(data.tweet.latLong[1],data.tweet.latLong[0]); //Twitter provides long first and then lat
 
-            socket.on('error', console.error.bind(console));
-            socket.on('message', console.log.bind(console));
+            //     //Add the latlong to heatmap data and rerender the heatmap layer.
+            //     heatMapDataPoints.push(myLatlng);
+            //     heatmap = new google.maps.visualization.HeatmapLayer({
+            //         data: heatMapDataPoints,
+            //         map: map
+            //     });
 
-            function addMessage(message, icon) {
-                console.log("Message: " + message);
-                let text = document.createTextNode(message),
-                    el = document.createElement('div'),
-                    messages = document.getElementById('LiveTweetStream');
+            //     // let marker = new google.maps.Marker({
+            //     //     position: myLatlng,
+            //     //     map: map,
+            //     //     animation: google.maps.Animation.DROP,
+            //     //     icon: image,
+            //     //     title: data.tweet.twitterHandle
+            //     // });
+            // });
 
-                let len = messages.getElementsByTagName('div').length;
-                if (len > 20) {
-                    messages.removeChild(messages.lastChild);
-                }
-                el.style.border = "0px 0px 2px 0px solid";
+            // socket.on('error', console.error.bind(console));
+            // socket.on('message', console.log.bind(console));
 
-                if (icon != null) {
-                    var img = document.createElement('img');
-                    img.src = icon;
-                    el.appendChild(img);
-                }
+            // function displayLiveTweet(tweet) {
+            //     //TODO: Modify to look like a tweet. Apply CSS.
+            //     // console.log("Message: " + message);
+            //     let text = document.createTextNode(message);
+                
+            //     let el = document.createElement('div');
+                
+            //     let messages = document.getElementById('LiveTweetStream');
 
-                el.appendChild(text);
-                messages.insertBefore(el, messages.firstChild);
-            }
+            //     let len = messages.getElementsByTagName('div').length;
+            //     if (len > 20) {
+            //         messages.removeChild(messages.lastChild);
+            //     }
+            //     el.style.borderBottom = "thin solid lightgray";
+            //     el.style.padding = "3px";
+
+            //     if (icon != null) {
+            //         var img = document.createElement('img');
+            //         img.src = icon;
+            //         el.appendChild(img);
+            //     }
+
+            //     el.appendChild(text);
+            //     messages.insertBefore(el, messages.firstChild);
+            // }
 
       </script>
-
+ -->
   </body>
 </html>
