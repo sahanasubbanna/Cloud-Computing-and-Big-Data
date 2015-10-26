@@ -103,16 +103,19 @@
           </div>
         </header>
         <nav class="demo-navigation mdl-navigation mdl-color--blue-grey-800">
-          <a class="mdl-navigation__link" href="">#Hashtags</a>
-          <a class="mdl-navigation__link" href="">October 22nd 2015</a>
-          <a class="mdl-navigation__link" href="">Asia</a>
-          <a class="mdl-navigation__link" href="">Handle Starting with S</a>
-          <a class="mdl-navigation__link" href="">Halloween</a>
+          <a class="keyword mdl-navigation__link" href="">Clinton</a>
+          <a class="keyword mdl-navigation__link" href="">Taylor Swift Tweets this month</a>
+          <a class="keyword mdl-navigation__link" href="">Asia</a>
+          <a class="keyword mdl-navigation__link" href="">News</a>
+          <a class="keyword mdl-navigation__link" href="">Halloween</a>
          </nav>
       </div>
       <main class="mdl-layout__content mdl-color--grey-100">
         <div class="mdl-grid demo-content">
-          <div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid" width="800px;">
+          <div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid" width="800px;" style="max-height: 300px; overflow: auto;">
+              <div id="searchQuery"></div>
+              <div id="searchResults"></div>
+
            <!--  <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop">
               <use xlink:href="#piechart" mask="url(#piemask)" />
               <text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>
@@ -137,7 +140,7 @@
               <div class="mdl-card__title mdl-card--expand mdl-color--teal-300"  style="min-height: 40px;">
                 <h2 class="mdl-card__title-text"  style="min-height: 40px;">Live Tweet Stream</h2>
               </div>
-              <div id="LiveTweetStream" class="mdl-card__supporting-text mdl-color-text--grey-600" style="min-height: 400px; max-height: 400px; overflow: scroll; ">
+              <div id="LiveTweetStream" class="mdl-card__supporting-text mdl-color-text--grey-600" style="min-height: 400px; max-height: 400px; overflow: auto; ">
               </div>
         </div>
       </main>
@@ -191,9 +194,11 @@
         </defs>
       </svg>
 
+    <script src="/javascripts/jquery-1.11.3.min.js"></script>
     <script src="/javascripts/material.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/javascripts/tweets.js"></script>
+
   </body>
 </html>

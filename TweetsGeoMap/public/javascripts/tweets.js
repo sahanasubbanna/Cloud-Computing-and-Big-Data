@@ -1,5 +1,78 @@
 "use strict";
 
+var searchString; 
+$('.keyword').click(function(event){
+    event.preventDefault();
+    // $('#searchResults').append("<p>Clicked</p>");
+    searchString = $(this).text();
+
+    switch(searchString) {
+        case "Taylor Swift Tweets this month": 
+            { 
+                var date = new Date();
+                searchString = "Taylor Swift since:" + date.getFullYear() + "-" + date.getMonth() + "-" + '01';
+                // console.log("strng: " + searchString);
+                break;
+            }
+    }
+
+    $.ajax({
+        method: "POST",
+        url: "/search",
+        dataType: "json",
+        data: JSON.stringify({ searchString: searchString }),
+        contentType: "application/json"
+    })
+    .done(function( data ) {
+        $('#searchQuery').empty()
+        $('#searchResults').empty();
+        // console.log("Search Data: " + JSON.stringify(data.statuses[0].user));
+        if(!data || data.statuses.length == 0) {
+            $('#searchQuery').append("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
+            $('#searchQuery').append("No results found!");
+        }
+        else {
+            $('#searchQuery').html("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
+            $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + searchString + "</p>");
+
+            //Got back the search results. Populate the map and the keyword search results div
+            for (var i = 0; i < data.statuses.length; i++) {
+                // console.log("URL: " + data.statuses[i].user.profile_image_url);
+
+                var tweet = {
+                    user_profile_img_url: data.statuses[i].user.profile_image_url,
+                    twitterHandle: data.statuses[i].user.screen_name,
+                    text: data.statuses[i].text,
+                    created_at: data.statuses[i].created_at,
+
+                }
+
+                displayTweet(tweet, 'searchResults');
+
+
+                if (data.statuses[i].coordinates != null) {
+                    tweet.latLong = data.statuses[i].coordinates.coordinates;
+                
+                    var myLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
+            
+                    //Add the latlong to heatmap data. It automatically updates the heatmap
+                    heatMapDataPoints.push(myLatlng);
+
+                    // console.log("heatMapDataPoints Length: " + heatMapDataPoints.length);
+
+                    if (heatmap == undefined) {
+                        heatmap = new google.maps.visualization.HeatmapLayer({
+                            data: heatMapDataPoints,
+                            map: map
+                        });
+                    }
+                }
+            }
+        }
+    });
+});
+
+
 var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
 
 var map, heatmap;
@@ -33,10 +106,8 @@ socket.on('welcome', function(data) {
 var marker;
 socket.on('livetweet', function(livetweet) {
     if (livetweet.tweet.latLong != null) {
-        // var message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
-        // console.log(message);
-        // var icon = data.tweet.user_profile_img_url;
-        displayLiveTweet(livetweet.tweet);
+
+        displayTweet(livetweet.tweet, 'LiveTweetStream');
 
         var myLatlng = new google.maps.LatLng(livetweet.tweet.latLong[1], livetweet.tweet.latLong[0]); //Twitter provides longitude first and then latitude
         
@@ -79,11 +150,11 @@ socket.on('dbtweet', function(dbtweet) {
 socket.on('error', console.error.bind(console));
 socket.on('message', console.log.bind(console));
 
-function displayLiveTweet(tweet) {
+function displayTweet(tweet, divClass) {
     //TODO: Modify to look like a tweet. Apply CSS.
     // console.log("Message: " + message);
    
-    var tweetStream = document.getElementById('LiveTweetStream');
+    var tweetStream = document.getElementById(divClass);
 
     var len = tweetStream.getElementsByTagName('div').length;
     if (len > 20) {

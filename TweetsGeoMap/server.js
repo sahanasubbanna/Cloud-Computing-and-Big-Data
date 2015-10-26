@@ -43,7 +43,17 @@ var T = new twit({
 var io = require('socket.io').listen(server);
 var stream = T.stream('statuses/sample');
 
-//Connect to DB
+
+app.post('/search', function(req, res) {
+	// console.log("Request object: " + req.body);
+	var searchString = req.body.searchString;
+	// console.log("searchString: " + searchString);
+	T.get('search/tweets', { q: searchString, count: 300 }, function(err, data, response) {
+  		return res.send(data);
+  	});
+});
+
+//Render the page
 app.get('/', function(req, res){
 	res.sendFile(path.join(__dirname, './views', 'index.html'));
 	// res.render('index', { title: 'TweetsGeoMap' });
@@ -63,43 +73,45 @@ io.on('connection', function(socket) {
 io.on('connection', function(socket) {
     //Get the data from the database
 
-    tweetModel.tweetCollection.scan().limit(3000).exec(function(err, tweets, lastKey) {
-    	for( var index = 0; index < tweets.length; index++ ) {
-    		// console.log(index, tweets[index].twitterHandle);
-			socket.emit('dbtweet', { tweet: tweets[index] });			
-    	}
-
-
-    	//Start the streaming
-    	stream.on('tweet', function(tweet) {
-		  	// console.log(tweet);
-		  	if (tweet.coordinates != null) {
-		  		var tweetObject = { 
-			  		tweet_id: tweet.id_str, 
-			  		twitterHandle: tweet.user.screen_name, 
-			  		user_id: tweet.user.id_str,
-			  		user_profile_img_url: tweet.user.profile_image_url,
-			  		user_verified: tweet.user.verified, 
-			  		text: tweet.text,
-			  		latLong: tweet.coordinates.coordinates,
-					tags: tweet.entities.hashtags,
-					favorite_count: tweet.favorite_count,
-					retweet_count: tweet.retweet_count,
-					created_at: tweet.created_at,
-					timestamp: tweet.timestamp_ms
-				};
-
-			  	var newTweet = new tweetModel.tweetCollection(tweetObject);
-
-				newTweet.save(function (err) {
-			  		if(err) { 
-			  			return console.log(err); 
-			  		}
-			  		console.log('Ta-da! Saved to DB');
-				});
-
-		    	socket.emit('livetweet', { tweet: tweetObject});
+    tweetModel.tweetCollection.scan().limit(1000).exec(function(err, tweets, lastKey) {
+    	if (tweets != undefined) {
+	    	for( var index = 0; index < tweets.length; index++ ) {
+	    		// console.log(index, tweets[index].twitterHandle);
+				socket.emit('dbtweet', { tweet: tweets[index] });			
 	    	}
-    	});
-    });
+
+
+	    	//Start the streaming
+	    	stream.on('tweet', function(tweet) {
+			  	// console.log(tweet);
+			  	if (tweet.coordinates != null) {
+			  		var tweetObject = { 
+				  		tweet_id: tweet.id_str, 
+				  		twitterHandle: tweet.user.screen_name, 
+				  		user_id: tweet.user.id_str,
+				  		user_profile_img_url: tweet.user.profile_image_url,
+				  		user_verified: tweet.user.verified, 
+				  		text: tweet.text,
+				  		latLong: tweet.coordinates.coordinates,
+						tags: tweet.entities.hashtags,
+						favorite_count: tweet.favorite_count,
+						retweet_count: tweet.retweet_count,
+						created_at: tweet.created_at,
+						timestamp: tweet.timestamp_ms
+					};
+
+				  	var newTweet = new tweetModel.tweetCollection(tweetObject);
+
+					newTweet.save(function (err) {
+				  		if(err) { 
+				  			return console.log(err); 
+				  		}
+				  		console.log('Ta-da! Saved to DB');
+					});
+
+			    	socket.emit('livetweet', { tweet: tweetObject});
+		    	}
+	    	});
+	    }
+	});
 });
