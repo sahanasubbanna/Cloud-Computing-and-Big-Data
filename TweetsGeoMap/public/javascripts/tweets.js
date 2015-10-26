@@ -1,13 +1,13 @@
 "use strict";
 
-let image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
 
-let map, heatmap;
-let myLatlng;
-let heatMapDataPoints = [];
+var map, heatmap;
+var myLatlng;
+var heatMapDataPoints = [];
 function initialize(lat,lon) {
-    let myLatlng = new google.maps.LatLng(0.000000, 0.000000);
-    let mapOptions = {
+    var myLatlng = new google.maps.LatLng(0.000000, 0.000000);
+    var mapOptions = {
         zoom: 1,
         center: myLatlng,
         mapTypeId: google.maps.MapTypeId.SATELLITE,
@@ -19,10 +19,10 @@ function initialize(lat,lon) {
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
-let socket = io.connect();
+var socket = io.connect();
 
 socket.on('welcome', function(data) {
-    let text = document.createTextNode("Welcome!");
+    var text = document.createTextNode("Welcome!");
 
     document.getElementById("LiveTweetStream").appendChild(text);
 
@@ -33,12 +33,12 @@ socket.on('welcome', function(data) {
 var marker;
 socket.on('livetweet', function(livetweet) {
     if (livetweet.tweet.latLong != null) {
-        // let message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
+        // var message = "TweetID: " + data.tweet.tweet_id + " , User: " + data.tweet.user_id + " , Name: " + data.tweet.twitterHandle + " , Geo: " + data.tweet.latLong + " , Text: " + data.tweet.text;
         // console.log(message);
-        // let icon = data.tweet.user_profile_img_url;
+        // var icon = data.tweet.user_profile_img_url;
         displayLiveTweet(livetweet.tweet);
 
-        let myLatlng = new google.maps.LatLng(livetweet.tweet.latLong[1], livetweet.tweet.latLong[0]); //Twitter provides longitude first and then latitude
+        var myLatlng = new google.maps.LatLng(livetweet.tweet.latLong[1], livetweet.tweet.latLong[0]); //Twitter provides longitude first and then latitude
         
         //Add the latlong to heatmap data. It automatically updates the heatmap
         heatMapDataPoints.push(myLatlng);
@@ -69,7 +69,7 @@ socket.on('livetweet', function(livetweet) {
 
 socket.on('dbtweet', function(dbtweet) {
     if (dbtweet.tweet.latLong != null) {
-        let myLatlng = new google.maps.LatLng(dbtweet.tweet.latLong[1], dbtweet.tweet.latLong[0]); //Twitter provides long first and then lat
+        var myLatlng = new google.maps.LatLng(dbtweet.tweet.latLong[1], dbtweet.tweet.latLong[0]); //Twitter provides long first and then lat
 
         //Add the latlong to heatmap data and rerender the heatmap layer.
         heatMapDataPoints.push(myLatlng);
@@ -83,18 +83,18 @@ function displayLiveTweet(tweet) {
     //TODO: Modify to look like a tweet. Apply CSS.
     // console.log("Message: " + message);
    
-    let tweetStream = document.getElementById('LiveTweetStream');
+    var tweetStream = document.getElementById('LiveTweetStream');
 
-    let len = tweetStream.getElementsByTagName('div').length;
+    var len = tweetStream.getElementsByTagName('div').length;
     if (len > 20) {
         tweetStream.removeChild(tweetStream.lastChild);
     }
     
-    let el = document.createElement('div');
+    var el = document.createElement('div');
     el.style.borderBottom = "thin solid lightgray";
     el.style.padding = "5px";
 
-    let imageAndName = document.createElement('div');
+    var imageAndName = document.createElement('div');
     imageAndName.style.padding = "4px";
     if (tweet.user_profile_img_url != null) {
         var img = document.createElement('img');
@@ -105,7 +105,7 @@ function displayLiveTweet(tweet) {
         imageAndName.appendChild(img);
     }
 
-    let username = document.createElement('span');
+    var username = document.createElement('span');
     username.innerHTML = "@" + tweet.twitterHandle;
     username.style.fontWeight = "bold";
     username.style.color = "#51A6E6";
@@ -114,12 +114,12 @@ function displayLiveTweet(tweet) {
 
     el.appendChild(imageAndName);
 
-    let text = document.createTextNode(tweet.text);
+    var text = document.createTextNode(tweet.text);
     el.appendChild(text);
 
     el.appendChild(document.createElement('br'));
     
-    let date = document.createElement('span');
+    var date = document.createElement('span');
     date.innerHTML = tweet.created_at;
     date.style.fontSize = "xx-small";
     el.appendChild(date);    

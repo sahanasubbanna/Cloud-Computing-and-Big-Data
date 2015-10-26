@@ -1,8 +1,8 @@
 "use strict";
 
 //Using dynamoose for AWS dynamoDB
-let dynamoose = require('dynamoose');
-let keys = require('./../config/access');
+var dynamoose = require('dynamoose');
+var keys = require('./../config/access');
 
 
 dynamoose.AWS.config.update({
@@ -12,7 +12,7 @@ dynamoose.AWS.config.update({
 });
 
 
-let tweetSchema = new dynamoose.Schema({
+var tweetSchema = new dynamoose.Schema({
 	// internal_id: { 
 	// 	type: Number, 
 	// 	unique: true, 
@@ -35,15 +35,15 @@ let tweetSchema = new dynamoose.Schema({
 });
 
 
-let options = {
+var options = {
   create: true, // Create table in DB, if it does not exist
   waitForActive: true, // Wait for table to be created before trying to use it
   waitForActiveTimeout: 180000 // wait 3 minutes for table to activate
 }
 
-let tweetCollection = dynamoose.model('tweets', tweetSchema, options);
+var tweetCollection = dynamoose.model('tweets', tweetSchema, options);
 
-module.exports = { tweetCollection, tweetSchema };
+module.exports = { tweetCollection:tweetCollection, tweetSchema:tweetSchema };
 
 
 
@@ -52,7 +52,7 @@ module.exports = { tweetCollection, tweetSchema };
 // const mongoose = require('mongoose');
 // const twit = require('twit');
 
-// let tweetSchema = new mongoose.Schema({
+// var tweetSchema = new mongoose.Schema({
 // 	internal_id: { type: Number, unique: true, required: true}, //autoincremented
 // 	tweet_id: {type: Number, unique: true, required: true},
 // 	twitterHandle: { type: String, unique: true, required: true}, 
@@ -60,7 +60,7 @@ module.exports = { tweetCollection, tweetSchema };
 // 	tags: [String]
 // });
 
-// let tweetCollection = mongoose.model('tweets', tweetSchema);
+// var tweetCollection = mongoose.model('tweets', tweetSchema);
 
 // module.exports = { tweetSchema, tweetCollection };
 //-----------------------------------------------------------------------------------------

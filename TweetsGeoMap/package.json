@@ -1,29 +1,23 @@
 {
   "name": "tweetsgeomap",
   "version": "0.0.1",
+  "private": true,
   "description": "Server which renders real time twitter data on a map",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --harmony server"
   },
-  "private": true,
-  "author": "Sahana Subbanna <ss4737@columbia.edu>",
-  "license": "MIT",
   "dependencies": {
-    "async": "^1.4.2",
-    "aws-sdk": "^2.2.10",
-    "body-parser": "^1.14.1",
-    "bootstrap": "^3.3.5",
-    "dynamoose": "^0.4.1",
+    "async": "*",
+    "aws-sdk": "*",
+    "body-parser": "*",
+    "bootstrap": "*",
+    "dynamoose": "*",
     "express": "^4.13.3",
-    "mongoose": "^4.0.8",
-    "mongoose-auto-increment": "^4.0.0",
-    "morgan": "^1.6.1",
-    "npm": "^3.3.8",
-    "react": "^0.14.0",
-    "request": "^2.65.0",
-    "socket.io": "^1.3.7",
-    "superagent": "^1.4.0",
-    "twit": "^2.1.0"
+    "morgan": "*",
+    "react": "*",
+    "request": "*",
+    "socket.io": "*",
+    "superagent": "*",
+    "twit": "*"
   }
 }

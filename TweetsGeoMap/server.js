@@ -2,37 +2,33 @@
 
 //Node Server for Twitter data streaming.
 
-const http = require('http');
-const express = require('express');
-const bodyParser = require('body-parser');
-const logger = require('morgan');
-const mongoose = require('mongoose');
-const autoincrement = require('mongoose-auto-increment');
-const twit = require('twit');
-const keys = require('./config/access');
-const database = require('./config/database');
-const tweetModel = require('./model/tweetSchema');
-const twitterStreamRoutes = require('./routes/twitterStreamRoutes');
-const path = require('path');
-const jade = require('jade');
+var http = require('http');
+var express = require('express');
+var bodyParser = require('body-parser');
+var logger = require('morgan');
+var twit = require('twit');
+var keys = require('./config/access');
+var database = require('./config/database');
+var tweetModel = require('./model/tweetSchema');
+var twitterStreamRoutes = require('./routes/twitterStreamRoutes');
+var path = require('path');
 
-let app = express();
+var app = express();
 
 app.set('port', process.env.PORT || 4000);
 
-let dbURL = process.env.dbURL || database.url; 
+var dbURL = process.env.dbURL || database.url; 
 
 //Setting up middleware services
 app.use(express.static('public'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-// app.set('view engine', 'jade');
 
 //app.use('/tweetsgeomap', twitterStreamRoutes);
 
-var server = http.createServer(app).listen(app.get('port'), () => {
-	console.log(`Tweet Server started on port: ${app.get('port')}`); 
+var server = http.createServer(app).listen(app.get('port'), function() {
+	console.log("Tweet Server started on port: " + app.get('port')); 
 });
 
 //Twitter
@@ -67,8 +63,8 @@ io.on('connection', function(socket) {
 io.on('connection', function(socket) {
     //Get the data from the database
 
-    tweetModel.tweetCollection.scan().limit(3000).exec((err, tweets, lastKey) => {
-    	for( let index = 0; index < tweets.length; index++ ) {
+    tweetModel.tweetCollection.scan().limit(3000).exec(function(err, tweets, lastKey) {
+    	for( var index = 0; index < tweets.length; index++ ) {
     		// console.log(index, tweets[index].twitterHandle);
 			socket.emit('dbtweet', { tweet: tweets[index] });			
     	}
@@ -78,7 +74,7 @@ io.on('connection', function(socket) {
     	stream.on('tweet', function(tweet) {
 		  	// console.log(tweet);
 		  	if (tweet.coordinates != null) {
-		  		let tweetObject = { 
+		  		var tweetObject = { 
 			  		tweet_id: tweet.id_str, 
 			  		twitterHandle: tweet.user.screen_name, 
 			  		user_id: tweet.user.id_str,
@@ -93,7 +89,7 @@ io.on('connection', function(socket) {
 					timestamp: tweet.timestamp_ms
 				};
 
-			  	let newTweet = new tweetModel.tweetCollection(tweetObject);
+			  	var newTweet = new tweetModel.tweetCollection(tweetObject);
 
 				newTweet.save(function (err) {
 			  		if(err) { 
