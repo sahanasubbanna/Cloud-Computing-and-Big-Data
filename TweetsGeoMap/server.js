@@ -60,7 +60,7 @@ io.on('connection', function(socket) {
 
     socket.on('search', function(query) {
     	var searchString = query.searchString;
-    	T.get('search/tweets', { q: searchString, count: 300 }, function(err, data, response) {
+    	T.get('search/tweets', { q: searchString, count: 500 }, function(err, data, response) {
   			socket.emit('searchResults', {searchString: searchString, data: data});
   		});
     })

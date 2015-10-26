@@ -2,6 +2,17 @@
 
 var socket = io.connect();
 
+var centerLatlng = new google.maps.LatLng(0.000000, 0.000000);
+var mapOptions = {
+    zoom: 1,
+    center: centerLatlng,
+    mapTypeId: google.maps.MapTypeId.SATELLITE,
+    tilt: 45
+};
+
+var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+
+//Event handler for when keywords are pressed
 var searchString; 
 $('.keyword').click(function(event){
     event.preventDefault();
@@ -17,15 +28,19 @@ $('.keyword').click(function(event){
                 break;
             }
     }
-
     socket.emit('search', { searchString: searchString });
 });
 
 
+
+
+//Search results returned are displayed.
 socket.on('searchResults', function( results ) {
     $('#searchQuery').empty()
     $('#searchResults').empty();
-    // console.log("Search Data: " + JSON.stringify(data.statuses[0].user));
+    $('#searchContainer').css("display", "block");
+    // $('#searchMap').css("display" , "block");
+    
     if(!results.data || results.data.statuses.length == 0) {
         $('#searchQuery').append("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
         $('#searchQuery').append("No results found!");
@@ -34,60 +49,71 @@ socket.on('searchResults', function( results ) {
         $('#searchQuery').html("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
         $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + results.searchString + "</p>");
 
+        // var cLatlng = new google.maps.LatLng(0.000000, 0.000000);
+        // var searchMapOptions = {
+        //     zoom: 1,
+        //     center: cLatlng,
+        //     mapTypeId: google.maps.MapTypeId.SATELLITE,
+        //     tilt: 45
+        // };
+
+        // var searchMap = new google.maps.Map(document.getElementById('searchMap'), searchMapOptions); //Store it on the global scope
+        // var searchHeatMapDataPoints = [];
+        // var searchHeatMap = new google.maps.visualization.HeatmapLayer({
+        //                         data: searchHeatMapDataPoints,
+        //                         map: searchMap
+        //                     });
+        // google.maps.event.trigger(searchMap, 'resize');
+    
         //Got back the search results. Populate the map and the keyword search results div
         for (var i = 0; i < results.data.statuses.length; i++) {
-            // console.log("URL: " + data.statuses[i].user.profile_image_url);
-
             var tweet = {
                 user_profile_img_url: results.data.statuses[i].user.profile_image_url,
                 twitterHandle: results.data.statuses[i].user.screen_name,
                 text: results.data.statuses[i].text,
-                created_at: results.data.statuses[i].created_at,
+                created_at: results.data.statuses[i].created_at
             }
 
             displayTweet(tweet, 'searchResults');
 
 
-            if (results.data.statuses[i].coordinates != null) {
-                tweet.latLong = results.data.statuses[i].coordinates.coordinates;
-            
-                var myLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
+            // if (results.data.statuses[i].coordinates != null) {
+            //     tweet.latLong = results.data.statuses[i].coordinates.coordinates;
+            //     console.log("Latlong: " + tweet.latLong);
+            //     var searchLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
         
-                //Add the latlong to heatmap data. It automatically updates the heatmap
-                heatMapDataPoints.push(myLatlng);
+            //     //Add the latlong to heatmap data. It automatically updates the heatmap
+            //     searchHeatMapDataPoints.push(searchLatlng);
+            //     console.log(searchHeatMapDataPoints);
 
-                // console.log("heatMapDataPoints Length: " + heatMapDataPoints.length);
+            //     if(marker != undefined) {
+            //         marker.setMap(null);
+            //     }
 
-                if (heatmap == undefined) {
-                    heatmap = new google.maps.visualization.HeatmapLayer({
-                        data: heatMapDataPoints,
-                        map: map
-                    });
-                }
-            }
+            //     marker = new google.maps.Marker({
+            //         position: myLatlng,
+            //         map: map,
+            //         animation: google.maps.Animation.DROP,
+            //         icon: image,
+            //         title: livetweet.tweet.twitterHandle
+            //     });
+            // }
         }
     }
 });
 
 
-var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+
+
+
+
 
 var map, heatmap;
 var myLatlng;
 var heatMapDataPoints = [];
 function initialize(lat,lon) {
-    var myLatlng = new google.maps.LatLng(0.000000, 0.000000);
-    var mapOptions = {
-        zoom: 1,
-        center: myLatlng,
-        mapTypeId: google.maps.MapTypeId.SATELLITE,
-        tilt: 45
-    };
-
     map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
-
 }
-
 google.maps.event.addDomListener(window, 'load', initialize);
 
 
