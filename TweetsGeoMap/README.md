@@ -1,3 +1,15 @@
+Sahana Subbanna
+ss4737
+
+Implementation Details:
+
+1. Used Node.js with express for development
+2. Used Amazon DynamoDB for storing the retrieved tweets
+3. Used 'twit' module for getting the streaming and REST APIs from twitter
+4. Used Google maps for visualization
+5. Used google material design templates for front end
+
+
 #Tweet Map
 Assignment Objectives:
 
