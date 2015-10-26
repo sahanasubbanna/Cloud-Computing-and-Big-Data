@@ -6,9 +6,9 @@ let keys = require('./../config/access');
 
 
 dynamoose.AWS.config.update({
-  accessKeyId: keys.awsKeys.accessKey,
-  secretAccessKey: keys.awsKeys.accessKeySecret,
-  region: 'us-east-1'
+  accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
+  secretAccessKey: (process.env.awsAccessKeySecret || keys.awsKeys.accessKeySecret),
+  region: (process.env.awsRegion || 'us-east-1')
 });
 
 

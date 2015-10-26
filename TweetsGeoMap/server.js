@@ -37,10 +37,10 @@ var server = http.createServer(app).listen(app.get('port'), () => {
 
 //Twitter
 var T = new twit({
-  consumer_key: keys.twitterKeys.consumerKey,
-  consumer_secret: keys.twitterKeys.consumerSecret,
-  access_token: keys.twitterKeys.accessToken,
-  access_token_secret: keys.twitterKeys.accessTokenSecret
+  consumer_key: (process.env.twitterConsumerKey || keys.twitterKeys.consumerKey),
+  consumer_secret: (process.env.twitterConsumerSecret || keys.twitterKeys.consumerSecret),
+  access_token: (process.env.twitterAccessToken || keys.twitterKeys.accessToken),
+  access_token_secret: (process.env.twitterAccessTokenSecret || keys.twitterKeys.accessTokenSecret)
 })
 
 //Socket.io
