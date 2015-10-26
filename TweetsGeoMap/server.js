@@ -44,15 +44,6 @@ var io = require('socket.io').listen(server);
 var stream = T.stream('statuses/sample');
 
 
-app.post('/search', function(req, res) {
-	// console.log("Request object: " + req.body);
-	var searchString = req.body.searchString;
-	// console.log("searchString: " + searchString);
-	T.get('search/tweets', { q: searchString, count: 300 }, function(err, data, response) {
-  		return res.send(data);
-  	});
-});
-
 //Render the page
 app.get('/', function(req, res){
 	res.sendFile(path.join(__dirname, './views', 'index.html'));
@@ -66,6 +57,13 @@ io.on('connection', function(socket) {
     socket.emit('welcome', { message: 'Welcome!', id: socket.id });
 
     socket.on('i am client', console.log);
+
+    socket.on('search', function(query) {
+    	var searchString = query.searchString;
+    	T.get('search/tweets', { q: searchString, count: 300 }, function(err, data, response) {
+  			socket.emit('searchResults', {searchString: searchString, data: data});
+  		});
+    })
 });
 
 

@@ -1,5 +1,7 @@
 "use strict";
 
+var socket = io.connect();
+
 var searchString; 
 $('.keyword').click(function(event){
     event.preventDefault();
@@ -16,60 +18,55 @@ $('.keyword').click(function(event){
             }
     }
 
-    $.ajax({
-        method: "POST",
-        url: "/search",
-        dataType: "json",
-        data: JSON.stringify({ searchString: searchString }),
-        contentType: "application/json"
-    })
-    .done(function( data ) {
-        $('#searchQuery').empty()
-        $('#searchResults').empty();
-        // console.log("Search Data: " + JSON.stringify(data.statuses[0].user));
-        if(!data || data.statuses.length == 0) {
-            $('#searchQuery').append("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
-            $('#searchQuery').append("No results found!");
-        }
-        else {
-            $('#searchQuery').html("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
-            $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + searchString + "</p>");
-
-            //Got back the search results. Populate the map and the keyword search results div
-            for (var i = 0; i < data.statuses.length; i++) {
-                // console.log("URL: " + data.statuses[i].user.profile_image_url);
-
-                var tweet = {
-                    user_profile_img_url: data.statuses[i].user.profile_image_url,
-                    twitterHandle: data.statuses[i].user.screen_name,
-                    text: data.statuses[i].text,
-                    created_at: data.statuses[i].created_at,
-
-                }
-
-                displayTweet(tweet, 'searchResults');
+    socket.emit('search', { searchString: searchString });
+});
 
 
-                if (data.statuses[i].coordinates != null) {
-                    tweet.latLong = data.statuses[i].coordinates.coordinates;
-                
-                    var myLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
+socket.on('searchResults', function( results ) {
+    $('#searchQuery').empty()
+    $('#searchResults').empty();
+    // console.log("Search Data: " + JSON.stringify(data.statuses[0].user));
+    if(!results.data || results.data.statuses.length == 0) {
+        $('#searchQuery').append("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
+        $('#searchQuery').append("No results found!");
+    }
+    else {
+        $('#searchQuery').html("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
+        $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + results.searchString + "</p>");
+
+        //Got back the search results. Populate the map and the keyword search results div
+        for (var i = 0; i < results.data.statuses.length; i++) {
+            // console.log("URL: " + data.statuses[i].user.profile_image_url);
+
+            var tweet = {
+                user_profile_img_url: results.data.statuses[i].user.profile_image_url,
+                twitterHandle: results.data.statuses[i].user.screen_name,
+                text: results.data.statuses[i].text,
+                created_at: results.data.statuses[i].created_at,
+            }
+
+            displayTweet(tweet, 'searchResults');
+
+
+            if (results.data.statuses[i].coordinates != null) {
+                tweet.latLong = results.data.statuses[i].coordinates.coordinates;
             
-                    //Add the latlong to heatmap data. It automatically updates the heatmap
-                    heatMapDataPoints.push(myLatlng);
+                var myLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
+        
+                //Add the latlong to heatmap data. It automatically updates the heatmap
+                heatMapDataPoints.push(myLatlng);
 
-                    // console.log("heatMapDataPoints Length: " + heatMapDataPoints.length);
+                // console.log("heatMapDataPoints Length: " + heatMapDataPoints.length);
 
-                    if (heatmap == undefined) {
-                        heatmap = new google.maps.visualization.HeatmapLayer({
-                            data: heatMapDataPoints,
-                            map: map
-                        });
-                    }
+                if (heatmap == undefined) {
+                    heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatMapDataPoints,
+                        map: map
+                    });
                 }
             }
         }
-    });
+    }
 });
 
 
@@ -92,7 +89,7 @@ function initialize(lat,lon) {
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
-var socket = io.connect();
+
 
 socket.on('welcome', function(data) {
     var text = document.createTextNode("Welcome!");
