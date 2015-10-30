@@ -2,7 +2,13 @@
 
 var socket = io.connect();
 
+var positiveTweets = 0;
+var neutralTweets = 0;
+var negativeTweets = 0;
+var totalTweets = 0;
+
 var centerLatlng = new google.maps.LatLng(0.000000, 0.000000);
+
 var mapOptions = {
     zoom: 1,
     center: centerLatlng,
@@ -13,105 +19,147 @@ var mapOptions = {
 var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
 
 //Event handler for when keywords are pressed
-var searchString; 
-$('.keyword').click(function(event){
+var searchString;
+$('.keyword').click(function(event) {
     event.preventDefault();
     // $('#searchResults').append("<p>Clicked</p>");
     searchString = $(this).text();
-
-    switch(searchString) {
-        case "Taylor Swift Tweets this month": 
-            { 
+    var newSearchString = $(this).text();
+    switch (searchString) {
+        case "Taylor Swift Tweets this month":
+            {
                 var date = new Date();
-                searchString = "Taylor Swift since:" + date.getFullYear() + "-" + date.getMonth() + "-" + '01';
-                // console.log("strng: " + searchString);
+                newSearchString = "Taylor Swift since:" + date.getFullYear() + "-" + date.getMonth() + "-" + '01';
                 break;
             }
     }
-    socket.emit('search', { searchString: searchString });
+    socket.emit('search', {
+        searchString: newSearchString,
+        origSearchString: searchString
+    });
 });
 
 
 
 
 //Search results returned are displayed.
-socket.on('searchResults', function( results ) {
+socket.on('searchResults', function(results) {
     $('#searchQuery').empty()
     $('#searchResults').empty();
     $('#searchContainer').css("display", "block");
-    // $('#searchMap').css("display" , "block");
-    
-    if(!results.data || results.data.statuses.length == 0) {
+    $('#searchMap').css("display", "block");
+
+    if (!results.data || results.data.statuses.length == 0) {
         $('#searchQuery').append("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
         $('#searchQuery').append("No results found!");
-    }
-    else {
-        $('#searchQuery').html("<p style=\"font-weight: bold;\">Keyword Search Results</p>");
-        $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + results.searchString + "</p>");
+    } else {
+        $('#searchQuery').css({
+            "position": "relative",
+            "padding-left": "10px"
+        });
+        $('#searchQuery').html("<br /><span style=\"font-weight: bold; color: orange;\">Keyword Search Results</span>");
+        $('#searchQuery').append("<button type=\"submit\" style=\"position: absolute; right: 20px; top: 20px; height: 20px; color: white; background-color: #51A6E6;\" onclick=\"hideSearchResults();\">Close</button> <br /><br />");
+        $('#searchQuery').append("<p style=\"color: green; font-weight: bold; font-size: 16px;\">" + results.origSearchString + "</p>");
+        var tweetsWithGeo = 0;
+        var cLatlng = new google.maps.LatLng(0.000000, 0.000000);
+        var searchMapOptions = {
+            zoom: 1,
+            center: cLatlng,
+            mapTypeId: google.maps.MapTypeId.SATELLITE,
+            tilt: 45
+        };
 
-        // var cLatlng = new google.maps.LatLng(0.000000, 0.000000);
-        // var searchMapOptions = {
-        //     zoom: 1,
-        //     center: cLatlng,
-        //     mapTypeId: google.maps.MapTypeId.SATELLITE,
-        //     tilt: 45
-        // };
-
-        // var searchMap = new google.maps.Map(document.getElementById('searchMap'), searchMapOptions); //Store it on the global scope
-        // var searchHeatMapDataPoints = [];
-        // var searchHeatMap = new google.maps.visualization.HeatmapLayer({
-        //                         data: searchHeatMapDataPoints,
-        //                         map: searchMap
-        //                     });
+        var searchMap = new google.maps.Map(document.getElementById('searchMap'), searchMapOptions); //Store it on the global scope
+        var searchHeatMapDataPoints = [];
+        var searchHeatMap = new google.maps.visualization.HeatmapLayer({
+            data: searchHeatMapDataPoints,
+            map: searchMap
+        });
         // google.maps.event.trigger(searchMap, 'resize');
-    
+
+        // console.log("Statuses: " + results.data.statuses.length);
         //Got back the search results. Populate the map and the keyword search results div
         for (var i = 0; i < results.data.statuses.length; i++) {
+            // console.log(results.data.statuses[i]);
+
             var tweet = {
                 user_profile_img_url: results.data.statuses[i].user.profile_image_url,
                 twitterHandle: results.data.statuses[i].user.screen_name,
                 text: results.data.statuses[i].text,
+                sentiment: "NA",
                 created_at: results.data.statuses[i].created_at
             }
 
             displayTweet(tweet, 'searchResults');
 
+            if (results.data.statuses[i].coordinates) {
+                tweetsWithGeo += 1;
+                tweet.latLong = results.data.statuses[i].coordinates.coordinates;
+                // console.log("Latlong: " + tweet.latLong);
+                var searchLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
 
-            // if (results.data.statuses[i].coordinates != null) {
-            //     tweet.latLong = results.data.statuses[i].coordinates.coordinates;
-            //     console.log("Latlong: " + tweet.latLong);
-            //     var searchLatlng = new google.maps.LatLng(tweet.latLong[1], tweet.latLong[0]); //Twitter provides longitude first and then latitude
-        
-            //     //Add the latlong to heatmap data. It automatically updates the heatmap
-            //     searchHeatMapDataPoints.push(searchLatlng);
-            //     console.log(searchHeatMapDataPoints);
+                //Add the latlong to heatmap data. It automatically updates the heatmap
+                searchHeatMapDataPoints.push(searchLatlng);
+                // console.log(searchHeatMapDataPoints);
 
-            //     if(marker != undefined) {
-            //         marker.setMap(null);
-            //     }
+                if (marker != undefined) {
+                    marker.setMap(null);
+                }
 
-            //     marker = new google.maps.Marker({
-            //         position: myLatlng,
-            //         map: map,
-            //         animation: google.maps.Animation.DROP,
-            //         icon: image,
-            //         title: livetweet.tweet.twitterHandle
-            //     });
-            // }
+                marker = new google.maps.Marker({
+                    position: myLatlng,
+                    map: searchMap,
+                    animation: google.maps.Animation.DROP,
+                    icon: image,
+                    title: tweet.twitterHandle
+                });
+            }
+
+            if (tweetsWithGeo === 0) {
+                var labelText = "No location information found from search";
+
+                var myOptions = {
+                    content: labelText,
+                    boxStyle: {
+                        border: "1px solid white",
+                        backgroundColor: "white",
+                        opacity: "0.7",
+                        textAlign: "center",
+                        fontSize: "10pt"
+                    },
+                    disableAutoPan: true,
+                    pixelOffset: new google.maps.Size(-25, 0),
+                    position: new google.maps.LatLng(0, -40),
+                    closeBoxURL: "",
+                    isHidden: false,
+                    pane: "mapPane",
+                    enableEventPropagation: true
+                };
+
+                var ibLabel = new InfoBox(myOptions);
+                ibLabel.open(searchMap);
+            }
         }
     }
 });
 
 
 
+function hideSearchResults() {
+    var el = document.getElementById('searchContainer');
+    el.style.display = "none";
 
+    var el2 = document.getElementById('searchMap');
+    el2.style.display = "none";
+}
 
 
 
 var map, heatmap;
 var myLatlng;
 var heatMapDataPoints = [];
-function initialize(lat,lon) {
+
+function initialize(lat, lon) {
     map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
 }
 google.maps.event.addDomListener(window, 'load', initialize);
@@ -123,7 +171,10 @@ socket.on('welcome', function(data) {
     document.getElementById("LiveTweetStream").appendChild(text);
 
     // Respond with a message including this clients' id sent from the server
-    socket.emit('i am client', {data: 'foo!', id: data.id});
+    socket.emit('i am client', {
+        data: 'Client!',
+        id: data.id
+    });
 });
 
 var marker;
@@ -133,7 +184,7 @@ socket.on('livetweet', function(livetweet) {
         displayTweet(livetweet.tweet, 'LiveTweetStream');
 
         var myLatlng = new google.maps.LatLng(livetweet.tweet.latLong[1], livetweet.tweet.latLong[0]); //Twitter provides longitude first and then latitude
-        
+
         //Add the latlong to heatmap data. It automatically updates the heatmap
         heatMapDataPoints.push(myLatlng);
 
@@ -146,7 +197,7 @@ socket.on('livetweet', function(livetweet) {
             });
         }
 
-        if(marker != undefined) {
+        if (marker != undefined) {
             marker.setMap(null);
         }
 
@@ -157,6 +208,13 @@ socket.on('livetweet', function(livetweet) {
             icon: image,
             title: livetweet.tweet.twitterHandle
         });
+
+        if (!livetweet.tweet.sentiment) {
+            livetweet.tweet.sentiment = "NA";
+        }
+
+        updateSentimentResult(livetweet.tweet.sentiment);
+
     }
 });
 
@@ -168,6 +226,12 @@ socket.on('dbtweet', function(dbtweet) {
         //Add the latlong to heatmap data and rerender the heatmap layer.
         heatMapDataPoints.push(myLatlng);
     }
+
+    if (!dbtweet.tweet.sentiment) {
+        dbtweet.tweet.sentiment = "NA";
+    }
+
+    updateSentimentResult(dbtweet.tweet.sentiment);
 });
 
 socket.on('error', console.error.bind(console));
@@ -176,15 +240,16 @@ socket.on('message', console.log.bind(console));
 function displayTweet(tweet, divClass) {
     //TODO: Modify to look like a tweet. Apply CSS.
     // console.log("Message: " + message);
-   
+
     var tweetStream = document.getElementById(divClass);
 
-    var len = tweetStream.getElementsByTagName('div').length;
+    var len = tweetStream.getElementsByClassName('tweet').length;
     if (len > 20) {
         tweetStream.removeChild(tweetStream.lastChild);
     }
-    
+
     var el = document.createElement('div');
+    el.classList.add("tweet");
     el.style.borderBottom = "thin solid lightgray";
     el.style.padding = "5px";
 
@@ -206,17 +271,76 @@ function displayTweet(tweet, divClass) {
     username.style.marginLeft = "7px";
     imageAndName.appendChild(username);
 
+
+    var sentiment = document.createElement('span');
+    sentiment.innerHTML = "  " + tweet.sentiment + "  ";
+    sentiment.style.backgroundColor = "black";
+    sentiment.style.fontWeight = "bold";
+    sentiment.style.color = getSentimentColor(tweet.sentiment);
+    sentiment.style.marginLeft = "7px";
+    imageAndName.appendChild(sentiment);
+
+
     el.appendChild(imageAndName);
 
     var text = document.createTextNode(tweet.text);
     el.appendChild(text);
 
     el.appendChild(document.createElement('br'));
-    
+
     var date = document.createElement('span');
     date.innerHTML = tweet.created_at;
     date.style.fontSize = "xx-small";
-    el.appendChild(date);    
+    el.appendChild(date);
 
     tweetStream.insertBefore(el, tweetStream.firstChild);
+}
+
+
+function updateSentimentResult(sentiment) {
+    switch (sentiment) {
+        case "positive":
+            {
+                totalTweets += 1;
+                var el = document.getElementById('positive');
+                positiveTweets += 1;
+                var percent = parseInt(positiveTweets / totalTweets * 100, 10);
+                el.firstChild.nodeValue = percent;
+                break;
+            }
+        case "neutral":
+            {
+                totalTweets += 1;
+                var el = document.getElementById('neutral');
+                neutralTweets += 1;
+                var percent = parseInt(neutralTweets / totalTweets * 100, 10);
+                el.firstChild.nodeValue = percent;
+                break;
+            }
+        case "negative":
+            {
+                totalTweets += 1;
+                var el = document.getElementById('negative');
+                negativeTweets += 1;
+                var percent = parseInt(negativeTweets / totalTweets * 100, 10);
+                el.firstChild.nodeValue = percent;
+                break;
+            }
+    }
+
+    // console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
+}
+
+
+function getSentimentColor(sentiment) {
+    switch (sentiment) {
+        case "positive":
+            return "#82FF82";
+        case "neutral":
+            return "#FFFF82";
+        case "negative":
+            return "#FF6666";
+        case "NA":
+            return "#FFFFFF";
+    }
 }

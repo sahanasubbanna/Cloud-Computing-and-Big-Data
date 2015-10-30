@@ -30,6 +30,7 @@ let tweetSchema = new dynamoose.Schema({
 	tags: [Object],
 	favorite_count: { type: Number },
 	retweet_count: { type: Number },
+	sentiment: { type: String },
 	created_at: { type: String },
 	timestamp: { type: String }
 });
@@ -41,7 +42,7 @@ let options = {
   waitForActiveTimeout: 180000 // wait 3 minutes for table to activate
 }
 
-let tweetCollection = dynamoose.model('tweets', tweetSchema, options);
+let tweetCollection = dynamoose.model('tweetsDB', tweetSchema, options);
 
 module.exports = { tweetCollection, tweetSchema };
 
