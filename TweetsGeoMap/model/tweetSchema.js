@@ -42,7 +42,7 @@ var options = {
   waitForActiveTimeout: 180000 // wait 3 minutes for table to activate
 }
 
-let tweetCollection = dynamoose.model('tweetsDB', tweetSchema, options);
+var tweetCollection = dynamoose.model('tweetsDB', tweetSchema, options);
 
 module.exports = { tweetCollection: tweetCollection, tweetSchema: tweetSchema };
 
