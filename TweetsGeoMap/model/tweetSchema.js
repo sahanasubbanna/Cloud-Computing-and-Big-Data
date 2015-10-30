@@ -1,8 +1,8 @@
 "use strict";
 
 //Using dynamoose for AWS dynamoDB
-let dynamoose = require('dynamoose');
-let keys = require('./../config/access');
+var dynamoose = require('dynamoose');
+var keys = require('./../config/access');
 
 
 dynamoose.AWS.config.update({
@@ -12,7 +12,7 @@ dynamoose.AWS.config.update({
 });
 
 
-let tweetSchema = new dynamoose.Schema({
+var tweetSchema = new dynamoose.Schema({
 	// internal_id: { 
 	// 	type: Number, 
 	// 	unique: true, 
@@ -36,7 +36,7 @@ let tweetSchema = new dynamoose.Schema({
 });
 
 
-let options = {
+var options = {
   create: true, // Create table in DB, if it does not exist
   waitForActive: true, // Wait for table to be created before trying to use it
   waitForActiveTimeout: 180000 // wait 3 minutes for table to activate
@@ -44,7 +44,7 @@ let options = {
 
 let tweetCollection = dynamoose.model('tweetsDB', tweetSchema, options);
 
-module.exports = { tweetCollection, tweetSchema };
+module.exports = { tweetCollection: tweetCollection, tweetSchema: tweetSchema };
 
 
 
