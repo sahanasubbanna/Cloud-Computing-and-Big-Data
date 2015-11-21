@@ -1,0 +1,23 @@
+{
+  "name": "tweetsgeomap",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Server which renders real time twitter data on a map",
+  "scripts": {
+    "start": "node --harmony server"
+  },
+  "dependencies": {
+    "async": "*",
+    "aws-sdk": "*",
+    "body-parser": "*",
+    "bootstrap": "*",
+    "dynamoose": "*",
+    "express": "^4.13.3",
+    "morgan": "*",
+    "react": "*",
+    "request": "*",
+    "socket.io": "*",
+    "superagent": "*",
+    "twit": "*"
+  }
+}
