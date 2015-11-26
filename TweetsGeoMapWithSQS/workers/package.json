@@ -4,7 +4,7 @@
   "private": true,
   "description": "Server which renders real time twitter data on a map",
   "scripts": {
-    "start": "node server.js"
+    "start": "node worker1.js"
   },
   "engines": {
     "node": "~4.2.1"

@@ -234,6 +234,7 @@ socket.on('dbtweet', function(dbtweet) {
     updateSentimentResult(dbtweet.tweet.sentiment);
 });
 
+socket.on('dbDone', function() {socket.emit('startStream', {}); });
 socket.on('error', console.error.bind(console));
 socket.on('message', console.log.bind(console));
 
