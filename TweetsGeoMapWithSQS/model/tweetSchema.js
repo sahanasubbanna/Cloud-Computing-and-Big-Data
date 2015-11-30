@@ -13,13 +13,6 @@ dynamoose.AWS.config.update({
 
 
 var tweetSchema = new dynamoose.Schema({
-	// internal_id: { 
-	// 	type: Number, 
-	// 	unique: true, 
-	// 	required: true, 
-	// 	validate: function(v) { return v > 0; },
- //    	hashKey: true
- //    }, //autoincremented
 	tweet_id: { type: String, unique: true, required: true, hashKey: true },
 	twitterHandle: { type: String, required: true}, 
 	user_id: { type: String },
@@ -35,6 +28,11 @@ var tweetSchema = new dynamoose.Schema({
 	timestamp: { type: String }
 });
 
+var tweetSentimentSchema = new dynamoose.Schema({
+	tweet_id: { type: String, unique: true, required: true, hashKey: true },
+	sentiment: { type: String, required: true }
+});
+
 
 var options = {
   create: true, // Create table in DB, if it does not exist
@@ -43,8 +41,9 @@ var options = {
 }
 
 var tweetCollection = dynamoose.model('tweetsDB', tweetSchema, options);
+var tweetSentimentCollection = dynamoose.model('tweetSentimentDB', tweetSentimentSchema, options);
 
-module.exports = { tweetCollection: tweetCollection, tweetSchema: tweetSchema };
+module.exports = { tweetCollection: tweetCollection, tweetSchema: tweetSchema, tweetSentimentCollection: tweetSentimentCollection };
 
 
 

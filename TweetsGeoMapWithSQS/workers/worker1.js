@@ -9,6 +9,8 @@ var logger = require('morgan');
 var keys = require('./config/access');
 var path = require('path');
 var AWS = require('aws-sdk');
+var SQSConsumer = require('sqs-consumer');
+var async = require('async');
 
 var app = express();
 
@@ -51,15 +53,15 @@ server.route({
 
 //modify this
 "use strict";
-var appConf = require('./config/appConf');
-var AWS = require('aws-sdk');
-AWS.config.loadFromPath('./config/aws_config.json');
-var delay = 20 * 1000;
-var sqs = new AWS.SQS();
-var exec = require('child_process').exec;
+// var appConf = require('./config/appConf');
+// var AWS = require('aws-sdk');
+// AWS.config.loadFromPath('./config/aws_config.json');
+// var delay = 20 * 1000;
+// var sqs = new AWS.SQS();
+// var exec = require('child_process').exec;
 function readMessage() {
   sqs.receiveMessage({
-    "QueueUrl": appConf.sqs_distribution_url,
+    "QueueUrl": keys.snsQueue.url,
     "MaxNumberOfMessages": 1,
     "VisibilityTimeout": 30,
     "WaitTimeSeconds": 20
@@ -69,6 +71,9 @@ function readMessage() {
       && (typeof data.Messages[0] !== 'undefined' && typeof data.Messages[0].Body !== 'undefined')) {
         //sqs msg body
         sqs_message_body = JSON.parse(data.Messages[0].Body);
+        console.log(-------------------------------------------------------------------------------)
+        console.log(sqs_message_body);
+
         //make call to nodejs handler in codeigniter
         exec('php '+ appConf.CI_FC_PATH +'/index.php nodejs_handler make_contentq_call "'+ sqs_message_body.contentq_cat_id+'" "'+sqs_message_body.cnhq_cat_id+'" "'+sqs_message_body.network_id+'"',
           function (error, stdout, stderr) {
@@ -91,3 +96,19 @@ function readMessage() {
   });
 }
 readMessage();
+
+
+//Sample
+function getTweetFromQueue() {
+    var app = Consumer.create({
+        queueUrl: keys.snsQueue.url,
+        region: awsRegion,
+        batchSize: 10,
+        handleMessage: function(message, done) {
+            var temp = JSON.stringify(message.Body);
+            var msgBody = JSON.parse(temp);
+            console.log('removed: ', msgBody);
+            return done();
+
+        }
+    });

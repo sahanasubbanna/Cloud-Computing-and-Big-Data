@@ -15,6 +15,12 @@ var path = require('path');
 var request = require('request');
 var AWS = require('aws-sdk');
 
+AWS.config.update({
+    accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
+    secretAccessKey: (process.env.awsAccessKeySecret || keys.awsKeys.accessKeySecret),
+    region: (process.env.awsRegion || 'us-east-1')
+});
+
 var app = express();
 
 app.set('port', process.env.PORT || 4000);
@@ -54,9 +60,29 @@ app.get('/', function(req, res) {
     // res.render('index', { title: 'TweetsGeoMap' });
 });
 
+var subscriptionToken;
+app.post('/sentiment_analysis', function(err, data) {
+    var bodyarr = [];
+    req.on('data', function(chunk){
+      bodyarr.push(chunk);
+    });  
+    req.on('end', function(){
+      var subscription = bodyarr.join('');
+      var subscriptionJSON = JSON.parse(subscription);
+      // console.log(subscriptionJSON.Token);
+      subscriptionToken = subscriptionJSON.Token;
+    });  
+    return res.send('Done');
+});
 
-// Emit welcome message on connection
-io.on('connection', function(socket) {
+var sockets = [];
+
+
+io.sockets.on('connection', function(socket) {
+
+    //Add the open socket to the list of sockets currently open
+    sockets.push(socket);
+
     // Use socket to communicate with this particular client only, sending it it's own id
     socket.emit('welcome', {
         message: 'Welcome!',
@@ -69,8 +95,8 @@ io.on('connection', function(socket) {
         tweetModel.tweetCollection.scan().limit(1000).exec(function(err, tweets, lastKey) {
             if (tweets != undefined) {
                 for (var index = 0; index < tweets.length; index++) {
-                    // console.log(index, tweets[index].twitterHandle);
-                    socket.emit('dbtweet', {
+                    //Emit the db tweets to all the clients.
+                    io.emit('dbtweet', {
                         tweet: tweets[index]
                     });
                 }
@@ -185,7 +211,7 @@ function sendSqsMessage(TweetTextForSentimentAnalysis) {
  
   var params = {
     MessageBody: TweetTextForSentimentAnalysis,
-    QueueUrl: 'https://sqs.us-east-1.amazonaws.com/039251014680/Tweets',
+    QueueUrl: keys.snsQueue.url,
     DelaySeconds: 0
   };
  
@@ -198,3 +224,44 @@ function sendSqsMessage(TweetTextForSentimentAnalysis) {
     };
   });
 }
+
+
+
+
+var sentimentAnalysisSubscriptionArn = null;
+var sns = new AWS.SNS();
+var topicArn = 'arn:aws:sns:us-east-1:039251014680:sentiment_analysis';
+var endpoint = 'http://tweetsgeomapwithsqs.elasticbeanstalk.com/sentiment_analysis';
+
+//Subscribe to the SNS topic for tweetSentiments
+var snsSubscribeParams = {
+  Protocol: 'http', /* required */
+  TopicArn: topicArn, /* required */
+  Endpoint: endpoint
+};
+
+sns.subscribe(snsSubscribeParams, function(err, data) {
+  if (err) {
+    console.log("Subscribe");
+    console.log(err, err.stack); // an error occurred
+  }
+  else {
+    console.log(data);
+    //If a subscription urn was created without requiring confirmation, store that
+    if (data.SubscriptionArn != 'pending confirmation') {
+        sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
+    }
+  } 
+});
+
+var snsConfirmSubscriptionParams = {
+  Token: subscriptionToken, /* required */
+  TopicArn: topicArn, /* required */
+};
+sns.confirmSubscription(snsConfirmSubscriptionParams, function(err, data) {
+  if (err) console.log(err, err.stack); // an error occurred
+  else     console.log(data);           // successful response
+});
+
+
+
