@@ -8,12 +8,11 @@ var bodyParser = require('body-parser');
 var logger = require('morgan');
 var twit = require('twit');
 var keys = require('./config/access');
-var database = require('./config/database');
 var tweetModel = require('./model/tweetSchema');
-var twitterStreamRoutes = require('./routes/twitterStreamRoutes');
 var path = require('path');
 var request = require('request');
 var AWS = require('aws-sdk');
+var awsRegion = 'us-east-1';
 
 AWS.config.update({
     accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
@@ -24,8 +23,6 @@ AWS.config.update({
 var app = express();
 
 app.set('port', process.env.PORT || 4000);
-
-var dbURL = process.env.dbURL || database.url;
 
 //Setting up middleware services
 app.use(express.static('public'));
@@ -112,65 +109,44 @@ io.sockets.on('connection', function(socket) {
         stream.on('tweet', function(tweet) {
             // console.log(tweet);
             if (tweet.coordinates != null) {
-                // Check the sentiment of the text and update the type of sentiment
-                // request.post('http://gateway-a.watsonplatform.net/calls/text/TextGetTextSentiment', {
-                //     headers: {
-                //         'Content-Type': 'application/x-www-form-urlencoded'
-                //     },
-                //     form: {
-                //         apikey: (process.env.alchemySentimentAnalysisKey || keys.alchemyKeys.sentimentAnalysisKey),
-                //         text: encodeURIComponent(tweet.text),
-                //         outputMode: "json"
-                //     },
-                //     json: true
-                // }, function(err, res, resultBody) {
-                // 	var body = JSON.parse(JSON.stringify(resultBody));
-                //     // console.log("--------### BEGIN ###--------\n");
-                //     // console.log(body.docSentiment + " " + body.language);
-                //     // console.log("--------Body:--------\n " + body);
-                //     if (body && body!=null && body.docSentiment) {
-                //     	// console.log("Type from body: " + body.docSentiment.type);
-                //         var sentimentType = body.docSentiment.type;
-                //         // console.log("sentiment type from body: " + sentimentType);
-                //     } else {
-                //         var sentimentType = "NA";
-                //     }
+                var sentimentType = "NA";
 
-                    //Send the tweet text to SQS for sentiment analysis
-                    sendSqsMessage(tweet.text);
+                var tweetObject = {
+                    tweet_id: tweet.id_str,
+                    twitterHandle: tweet.user.screen_name,
+                    user_id: tweet.user.id_str,
+                    user_profile_img_url: tweet.user.profile_image_url,
+                    user_verified: tweet.user.verified,
+                    text: tweet.text,
+                    latLong: tweet.coordinates.coordinates,
+                    tags: tweet.entities.hashtags,
+                    favorite_count: tweet.favorite_count,
+                    retweet_count: tweet.retweet_count,
+                    sentiment: sentimentType,
+                    created_at: tweet.created_at,
+                    timestamp: tweet.timestamp_ms
+                };
+
+                var newTweet = new tweetModel.tweetCollection(tweetObject);
+                newTweet.save(function(err) {
+                    if (err) {
+                        return console.log(err);
+                    }
+                    console.log('Ta-da! Saved to DB');
+                });
+
+                //Send the tweet text to SQS for sentiment analysis
+                var tweetAsString = JSON.stringify(tweetObject);
+                sendSqsMessage(tweetAsString);
+
+                // socket.emit('livetweet', {
+                //     tweet: tweetObject
+                // });
+
+                // console.log("Tweet sentiment: " + tweetObject.sentiment);
 
 
-                    var tweetObject = {
-                        tweet_id: tweet.id_str,
-                        twitterHandle: tweet.user.screen_name,
-                        user_id: tweet.user.id_str,
-                        user_profile_img_url: tweet.user.profile_image_url,
-                        user_verified: tweet.user.verified,
-                        text: tweet.text,
-                        latLong: tweet.coordinates.coordinates,
-                        tags: tweet.entities.hashtags,
-                        favorite_count: tweet.favorite_count,
-                        retweet_count: tweet.retweet_count,
-                        // sentiment: sentimentType,
-                        created_at: tweet.created_at,
-                        timestamp: tweet.timestamp_ms
-                    };
-
-                    socket.emit('livetweet', {
-                        tweet: tweetObject
-                    });
-
-                    // console.log("Tweet sentiment: " + tweetObject.sentiment);
-
-                    var newTweet = new tweetModel.tweetCollection(tweetObject);
-                    newTweet.save(function(err) {
-                        if (err) {
-                            return console.log(err);
-                        }
-                        console.log('Ta-da! Saved to DB');
-                    });
-
-                    //https: //gateway-a.watsonplatform.net/calls/text/TextGetTextSentiment
+                //https: //gateway-a.watsonplatform.net/calls/text/TextGetTextSentiment
             }
         });
     });
@@ -191,17 +167,13 @@ io.sockets.on('connection', function(socket) {
             });
         });
     });
-
-
-
 });
 
 
 
-function sendSqsMessage(TweetTextForSentimentAnalysis) {
+function sendSqsMessage(tweet) {
   'use strict';
  
-  var awsRegion = 'us-east-1';
   AWS.config.update({
     accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
     secretAccessKey: (process.env.awsAccessKeySecret || keys.awsKeys.accessKeySecret),
@@ -209,9 +181,11 @@ function sendSqsMessage(TweetTextForSentimentAnalysis) {
   });
   var sqs = new AWS.SQS();
  
+  //Convert the object into string to send to queue
+  var tweetString = JSON.stringify(tweet);
   var params = {
-    MessageBody: TweetTextForSentimentAnalysis,
-    QueueUrl: keys.snsQueue.url,
+    MessageBody: tweetString,
+    QueueUrl: keys.sqsQueue.url,
     DelaySeconds: 0
   };
  
@@ -227,11 +201,26 @@ function sendSqsMessage(TweetTextForSentimentAnalysis) {
 
 
 
-
-var sentimentAnalysisSubscriptionArn = null;
 var sns = new AWS.SNS();
-var topicArn = 'arn:aws:sns:us-east-1:039251014680:sentiment_analysis';
+
+var topicName = "sentiment_analysis";
+var topicArn = null;
+// var topicArn = 'arn:aws:sns:us-east-1:039251014680:sentiment_analysis';
 var endpoint = 'http://tweetsgeomapwithsqs.elasticbeanstalk.com/sentiment_analysis';
+var topicParams = {
+  Name: topicName /* required */
+};
+
+sns.createTopic(topicParams, function(err, data) {
+    if (err) {
+        console.log(err, err.stack); // an error occurred
+    }
+    else {
+        console.log(data);           // successful response
+        topicArn = data.TopicArn;
+    }
+});
+
 
 //Subscribe to the SNS topic for tweetSentiments
 var snsSubscribeParams = {
@@ -251,17 +240,18 @@ sns.subscribe(snsSubscribeParams, function(err, data) {
     if (data.SubscriptionArn != 'pending confirmation') {
         sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
     }
-  } 
+  }
 });
 
 var snsConfirmSubscriptionParams = {
   Token: subscriptionToken, /* required */
   TopicArn: topicArn, /* required */
 };
+
 sns.confirmSubscription(snsConfirmSubscriptionParams, function(err, data) {
-  if (err) console.log(err, err.stack); // an error occurred
-  else     console.log(data);           // successful response
+    if (err) console.log(err, err.stack); // an error occurred
+    else {
+        console.log(data);           // successful response
+        sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
+    }
 });
-
-
-
