@@ -323,32 +323,34 @@ function updateSentimentResult(sentiment) {
     switch (sentiment) {
         case "positive":
             {
-                var el = document.getElementById('positive');
                 positiveTweets += 1;
-                totalTweets = positiveTweets + neutralTweets + negativeTweets;
-                var percent = parseInt(positiveTweets / totalTweets * 100, 10);
-                el.firstChild.nodeValue = percent;
                 break;
             }
         case "neutral":
             {
-                var el = document.getElementById('neutral');
                 neutralTweets += 1;
-                totalTweets = positiveTweets + neutralTweets + negativeTweets;
-                var percent = parseInt(neutralTweets / totalTweets * 100, 10);
-                el.firstChild.nodeValue = percent;
                 break;
             }
         case "negative":
             {
-                var el = document.getElementById('negative');
                 negativeTweets += 1;
-                totalTweets = positiveTweets + neutralTweets + negativeTweets;
-                var percent = parseInt(negativeTweets / totalTweets * 100, 10);
-                el.firstChild.nodeValue = percent;
                 break;
             }
     }
+
+    totalTweets = positiveTweets + neutralTweets + negativeTweets;
+    var el = document.getElementById('positive');
+    var percent = parseInt(positiveTweets / totalTweets * 100, 10);
+    el.firstChild.nodeValue = percent;
+
+    el2 = document.getElementById('neutral');
+    percent2 = parseInt(neutralTweets / totalTweets * 100, 10);
+    el2.firstChild.nodeValue = percent2;
+
+    el3 = document.getElementById('negative');
+    var percent3 = parseInt(negativeTweets / totalTweets * 100, 10);
+    el3.firstChild.nodeValue = percent3;
+
 
     console.log('-----------------Sentiments-------------');
     console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
