@@ -77,7 +77,7 @@ function getTweetSentiment(tweet) {
             var sentimentType = "NA";
         }
 
-        // console.log(sentimentType);
+        console.log(sentimentType);
 
         globalTweetObject.sentiment = sentimentType;
 

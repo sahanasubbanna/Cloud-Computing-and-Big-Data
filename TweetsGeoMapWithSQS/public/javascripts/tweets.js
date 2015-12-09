@@ -254,10 +254,7 @@ socket.on('dbtweet', function(dbtweet) {
     }
 
     updateSentimentResult(dbtweet.tweet.sentiment);
-
-    socket.emit('startStream', {});
 });
-
 
 socket.on('error', console.error.bind(console));
 socket.on('message', console.log.bind(console));
@@ -326,27 +323,27 @@ function updateSentimentResult(sentiment) {
     switch (sentiment) {
         case "positive":
             {
-                totalTweets += 1;
                 var el = document.getElementById('positive');
                 positiveTweets += 1;
+                totalTweets = positiveTweets + neutralTweets + negativeTweets;
                 var percent = parseInt(positiveTweets / totalTweets * 100, 10);
                 el.firstChild.nodeValue = percent;
                 break;
             }
         case "neutral":
             {
-                totalTweets += 1;
                 var el = document.getElementById('neutral');
                 neutralTweets += 1;
+                totalTweets = positiveTweets + neutralTweets + negativeTweets;
                 var percent = parseInt(neutralTweets / totalTweets * 100, 10);
                 el.firstChild.nodeValue = percent;
                 break;
             }
         case "negative":
             {
-                totalTweets += 1;
                 var el = document.getElementById('negative');
                 negativeTweets += 1;
+                totalTweets = positiveTweets + neutralTweets + negativeTweets;
                 var percent = parseInt(negativeTweets / totalTweets * 100, 10);
                 el.firstChild.nodeValue = percent;
                 break;

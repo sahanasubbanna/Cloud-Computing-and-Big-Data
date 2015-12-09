@@ -214,8 +214,8 @@ io.sockets.on('connection', function(socket) {
     });
 
 
-    socket.on('startStream', function() {
-        //Start the streaming
+    // socket.on('startStream', function() {
+    //     //Start the streaming
         stream.on('tweet', function(tweet) {
             // console.log(tweet);
             if (tweet.coordinates != null) {
@@ -243,7 +243,7 @@ io.sockets.on('connection', function(socket) {
                 setTimeout(sendSqsMessage(tweetObject), 2000);
             }
         });
-    });
+    // });
 
 
     socket.on('search', function(query) {
