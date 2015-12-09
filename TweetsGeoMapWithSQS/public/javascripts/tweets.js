@@ -16,7 +16,10 @@ var mapOptions = {
     tilt: 45
 };
 
-var image = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+var tweetBirdDefaultImage = new google.maps.MarkerImage('images/twitter-bird.png', null, null, null, new google.maps.Size(15, 15));
+var tweetBirdPositiveImage = new google.maps.MarkerImage('images/twitter-bird-positive.png', null, null, null, new google.maps.Size(15, 15));
+var tweetBirdNegativeImage = new google.maps.MarkerImage('images/twitter-bird-negative.png', null, null, null, new google.maps.Size(15, 15));
+var tweetBirdNeutralImage = new google.maps.MarkerImage('images/twitter-bird-neutral.png', null, null, null, new google.maps.Size(15, 15));
 
 //Event handler for when keywords are pressed
 var searchString;
@@ -44,7 +47,7 @@ $('.keyword').click(function(event) {
 
 //Search results returned are displayed.
 socket.on('searchResults', function(results) {
-    $('#searchQuery').empty()
+    $('#searchQuery').empty();
     $('#searchResults').empty();
     $('#searchContainer').css("display", "block");
     $('#searchMap').css("display", "block");
@@ -106,11 +109,19 @@ socket.on('searchResults', function(results) {
                     marker.setMap(null);
                 }
 
+                var markerIcon = tweetBirdDefaultImage;
+
+                switch(tweet.sentiment) {
+                    case "positive": markerIcon = tweetBirdPositiveImage; break;
+                    case "negative": markerIcon = tweetBirdNegativeImage; break;
+                    case "neutral": markerIcon = tweetBirdNeutralImage; break;
+                }
+
                 marker = new google.maps.Marker({
                     position: myLatlng,
                     map: searchMap,
                     animation: google.maps.Animation.DROP,
-                    icon: image,
+                    icon: markerIcon,
                     title: tweet.twitterHandle
                 });
             }
@@ -177,11 +188,17 @@ socket.on('welcome', function(data) {
     });
 });
 
+
+
 var marker;
 socket.on('livetweet', function(livetweet) {
     if (livetweet.tweet.latLong != null) {
 
         displayTweet(livetweet.tweet, 'LiveTweetStream');
+
+        if (!livetweet.tweet.sentiment) {
+            livetweet.tweet.sentiment = "NA";
+        }
 
         var myLatlng = new google.maps.LatLng(livetweet.tweet.latLong[1], livetweet.tweet.latLong[0]); //Twitter provides longitude first and then latitude
 
@@ -201,17 +218,22 @@ socket.on('livetweet', function(livetweet) {
             marker.setMap(null);
         }
 
+        var markerIcon = tweetBirdDefaultImage;
+
+        switch(livetweet.tweet.sentiment) {
+            case "positive": markerIcon = tweetBirdPositiveImage; break;
+            case "negative": markerIcon = tweetBirdNegativeImage; break;
+            case "neutral": markerIcon = tweetBirdNeutralImage; break;
+        }
+
         marker = new google.maps.Marker({
             position: myLatlng,
             map: map,
             animation: google.maps.Animation.DROP,
-            icon: image,
+            icon: markerIcon,
             title: livetweet.tweet.twitterHandle
         });
 
-        if (!livetweet.tweet.sentiment) {
-            livetweet.tweet.sentiment = "NA";
-        }
 
         updateSentimentResult(livetweet.tweet.sentiment);
 
@@ -232,9 +254,11 @@ socket.on('dbtweet', function(dbtweet) {
     }
 
     updateSentimentResult(dbtweet.tweet.sentiment);
+
+    socket.emit('startStream', {});
 });
 
-socket.on('dbDone', function() {socket.emit('startStream', {}); });
+
 socket.on('error', console.error.bind(console));
 socket.on('message', console.log.bind(console));
 
@@ -329,7 +353,8 @@ function updateSentimentResult(sentiment) {
             }
     }
 
-    // console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
+    console.log('-----------------Sentiments-------------');
+    console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
 }
 
 

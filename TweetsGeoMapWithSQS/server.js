@@ -12,12 +12,12 @@ var tweetModel = require('./model/tweetSchema');
 var path = require('path');
 var request = require('request');
 var AWS = require('aws-sdk');
-var awsRegion = 'us-east-1';
+var awsRegion = 'us-west-2';//'us-east-1';
 
 AWS.config.update({
     accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
     secretAccessKey: (process.env.awsAccessKeySecret || keys.awsKeys.accessKeySecret),
-    region: (process.env.awsRegion || 'us-east-1')
+    region: (process.env.awsRegion || 'us-west-2')
 });
 
 var app = express();
@@ -51,34 +51,146 @@ var io = require('socket.io').listen(server);
 var stream = T.stream('statuses/sample');
 var globalSocket;
 
+
+app.use(function(req, res, next) {
+    req.io = io;
+    next();
+});
+
+
 //Render the page
 app.get('/', function(req, res) {
+    createSNSTopicAndSubscribe(req, res);
     res.sendFile(path.join(__dirname, './views', 'index.html'));
     // res.render('index', { title: 'TweetsGeoMap' });
 });
 
-var subscriptionToken;
-app.post('/sentiment_analysis', function(err, data) {
-    var bodyarr = [];
-    req.on('data', function(chunk){
-      bodyarr.push(chunk);
-    });  
-    req.on('end', function(){
-      var subscription = bodyarr.join('');
-      var subscriptionJSON = JSON.parse(subscription);
-      // console.log(subscriptionJSON.Token);
-      subscriptionToken = subscriptionJSON.Token;
-    });  
-    return res.send('Done');
+
+var sns = new AWS.SNS();
+var topicName = "sentiment_analysis";
+var topicArn = null;
+var subscriptionToken = null;
+var sentimentAnalysisSubscriptionArn = null;
+
+function createSNSTopicAndSubscribe(req, res) {
+    var endpoint = req.protocol + '://' + req.get('host') + '/sentiment_analysis';
+    console.log("endpoint: " + endpoint);
+    var topicParams = {
+      Name: topicName /* required */
+    };
+
+    sns.createTopic(topicParams, function(err, data) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        }
+
+        console.log(data);           // successful response
+        topicArn = data.TopicArn;
+
+        //Subscribe to the SNS topic for tweetSentiments
+        var snsSubscribeParams = {
+          Protocol: 'http', /* required */
+          TopicArn: topicArn, /* required */
+          Endpoint: endpoint
+        };
+
+        sns.subscribe(snsSubscribeParams, function(err, data) {
+          if (err) {
+            console.log("Subscribe");
+            console.log(err, err.stack); // an error occurred
+          }
+          else {
+            console.log("Subscribe req no error: ");
+            console.log(data);
+            //If a subscription urn was created without requiring confirmation, store that
+            if (data.SubscriptionArn != "pending confirmation") {
+                sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
+            }
+          }
+        });
+    });
+}
+
+
+app.post('/sentiment_analysis', function(req, res) {
+    console.log("\n\n------------ POST Called ------------");
+    // console.log(req.headers);
+
+    var amazonMsgType = req.headers['x-amz-sns-message-type'];
+
+    if (amazonMsgType === "SubscriptionConfirmation") {
+        console.log('=========SubscriptionConfirmation===========');
+        console.log("MessageType: " + amazonMsgType);
+        var bodyarr = [];
+        req.on('data', function(chunk){
+            bodyarr.push(chunk);
+        });  
+        req.on('end', function(){
+            console.log(bodyarr);
+            var subscription = bodyarr.join('');
+            console.log('=========Req.end=========');
+            // console.log(subscription);
+            var subscriptionJSON = JSON.parse(subscription);
+            // console.log(subscriptionJSON.Token);
+            subscriptionToken = subscriptionJSON.Token;
+            console.log("Subscription Token: " + subscriptionToken);
+
+            var snsConfirmSubscriptionParams = {
+                Token: subscriptionToken, /* required */
+                TopicArn: topicArn, /* required */
+            };
+
+            sns.confirmSubscription(snsConfirmSubscriptionParams, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else {
+                    // console.log(data);           // successful response
+                    sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
+                    console.log("SubscriptionArn: " + sentimentAnalysisSubscriptionArn);
+                }
+            }); 
+        });
+        return res.send("Done");
+    }
+
+    if (amazonMsgType === "Notification") {
+        console.log('=========Notification=========');
+        console.log("MessageType: " + amazonMsgType);
+        var bodyarray = [];
+        req.on('data', function(chunk){
+            bodyarray.push(chunk);
+        });  
+        req.on('end', function(){
+            var notificationMsg = bodyarray.join('');
+            var notificationJSON = JSON.parse(notificationMsg);
+            var tweet = JSON.parse(notificationJSON.Message);
+            // console.log(tweet);
+
+            //Save the tweet received in a DB
+            var newTweet = new tweetModel.tweetCollection(tweet);
+            newTweet.save(function(err) {
+                if (err) {
+                    return console.log(err);
+                }
+                console.log('Ta-da! Saved to DB');
+            });
+
+
+            var io = req.io; //io object stored on the req object
+
+            io.emit('livetweet', {
+                tweet: tweet
+            });
+        });
+    }
 });
 
-var sockets = [];
 
+var allSockets = [];
 
 io.sockets.on('connection', function(socket) {
 
     //Add the open socket to the list of sockets currently open
-    sockets.push(socket);
+    allSockets.push(socket);
 
     // Use socket to communicate with this particular client only, sending it it's own id
     socket.emit('welcome', {
@@ -99,8 +211,6 @@ io.sockets.on('connection', function(socket) {
                 }
             }
         });
-
-        socket.emit('dbDone', {});
     });
 
 
@@ -127,26 +237,10 @@ io.sockets.on('connection', function(socket) {
                     timestamp: tweet.timestamp_ms
                 };
 
-                var newTweet = new tweetModel.tweetCollection(tweetObject);
-                newTweet.save(function(err) {
-                    if (err) {
-                        return console.log(err);
-                    }
-                    console.log('Ta-da! Saved to DB');
-                });
+                //Earlier DB save was here
 
                 //Send the tweet text to SQS for sentiment analysis
-                var tweetAsString = JSON.stringify(tweetObject);
-                sendSqsMessage(tweetAsString);
-
-                // socket.emit('livetweet', {
-                //     tweet: tweetObject
-                // });
-
-                // console.log("Tweet sentiment: " + tweetObject.sentiment);
-
-
-                //https: //gateway-a.watsonplatform.net/calls/text/TextGetTextSentiment
+                setTimeout(sendSqsMessage(tweetObject), 2000);
             }
         });
     });
@@ -172,13 +266,6 @@ io.sockets.on('connection', function(socket) {
 
 
 function sendSqsMessage(tweet) {
-  'use strict';
- 
-  AWS.config.update({
-    accessKeyId: (process.env.awsAccessKey || keys.awsKeys.accessKey),
-    secretAccessKey: (process.env.awsAccessKeySecret || keys.awsKeys.accessKeySecret),
-    region: awsRegion
-  });
   var sqs = new AWS.SQS();
  
   //Convert the object into string to send to queue
@@ -201,57 +288,15 @@ function sendSqsMessage(tweet) {
 
 
 
-var sns = new AWS.SNS();
+// var topicArn = 'arn:aws:sns:us-west-2:039251014680:sentiment_analysis';
+// var endpoint = 'http://tweetsgeomapwithsqs.elasticbeanstalk.com/sentiment_analysis';
+// var endpoint = "http://b7c09395.ngrok.io/sentiment_analysis";
 
-var topicName = "sentiment_analysis";
-var topicArn = null;
-// var topicArn = 'arn:aws:sns:us-east-1:039251014680:sentiment_analysis';
-var endpoint = 'http://tweetsgeomapwithsqs.elasticbeanstalk.com/sentiment_analysis';
-var topicParams = {
-  Name: topicName /* required */
-};
-
-sns.createTopic(topicParams, function(err, data) {
-    if (err) {
-        console.log(err, err.stack); // an error occurred
-    }
-    else {
-        console.log(data);           // successful response
-        topicArn = data.TopicArn;
-    }
-});
-
-
-//Subscribe to the SNS topic for tweetSentiments
-var snsSubscribeParams = {
-  Protocol: 'http', /* required */
-  TopicArn: topicArn, /* required */
-  Endpoint: endpoint
-};
-
-sns.subscribe(snsSubscribeParams, function(err, data) {
-  if (err) {
-    console.log("Subscribe");
-    console.log(err, err.stack); // an error occurred
-  }
-  else {
-    console.log(data);
-    //If a subscription urn was created without requiring confirmation, store that
-    if (data.SubscriptionArn != 'pending confirmation') {
-        sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
-    }
-  }
-});
-
-var snsConfirmSubscriptionParams = {
-  Token: subscriptionToken, /* required */
-  TopicArn: topicArn, /* required */
-};
-
-sns.confirmSubscription(snsConfirmSubscriptionParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else {
-        console.log(data);           // successful response
-        sentimentAnalysisSubscriptionArn = data.SubscriptionArn;
-    }
-});
+//Save to DB
+// var newTweet = new tweetModel.tweetCollection(tweetObject);
+// newTweet.save(function(err) {
+//     if (err) {
+//         return console.log(err);
+//     }
+//     console.log('Ta-da! Saved to DB');
+// });
