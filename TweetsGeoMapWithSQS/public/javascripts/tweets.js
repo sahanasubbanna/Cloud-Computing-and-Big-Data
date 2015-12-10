@@ -343,11 +343,11 @@ function updateSentimentResult(sentiment) {
     var percent = parseInt(positiveTweets / totalTweets * 100, 10);
     el.firstChild.nodeValue = percent;
 
-    el2 = document.getElementById('neutral');
-    percent2 = parseInt(neutralTweets / totalTweets * 100, 10);
+    var el2 = document.getElementById('neutral');
+    var percent2 = parseInt(neutralTweets / totalTweets * 100, 10);
     el2.firstChild.nodeValue = percent2;
 
-    el3 = document.getElementById('negative');
+    var el3 = document.getElementById('negative');
     var percent3 = parseInt(negativeTweets / totalTweets * 100, 10);
     el3.firstChild.nodeValue = percent3;
 
