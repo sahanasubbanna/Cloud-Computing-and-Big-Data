@@ -43,6 +43,23 @@ $('.keyword').click(function(event) {
 });
 
 
+var placeName;
+$('.trend').click(function(event) {
+    event.preventDefault();
+    // $('#searchResults').append("<p>Clicked</p>");
+    placeName = $(this).text();
+    var placeWOEID;
+    switch(placeName) {
+        case "New York": placeWOEID = '2459115'; break;
+        case "Bangalore": placeWOEID = '2295420'; break;
+        case "Zurich": placeWOEID = '784794'; break;
+    }
+    socket.emit('findTrends', {
+        placeWOEID: placeWOEID
+    });
+});
+
+
 
 
 //Search results returned are displayed.
@@ -166,12 +183,12 @@ function hideSearchResults() {
 
 
 
-var map, heatmap;
+var globalMap, heatmap;
 var myLatlng;
 var heatMapDataPoints = [];
 
 function initialize(lat, lon) {
-    map = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
+    globalMap = new google.maps.Map(document.getElementById('map'), mapOptions); //Store it on the global scope
 }
 google.maps.event.addDomListener(window, 'load', initialize);
 
@@ -210,7 +227,7 @@ socket.on('livetweet', function(livetweet) {
         if (heatmap == undefined) {
             heatmap = new google.maps.visualization.HeatmapLayer({
                 data: heatMapDataPoints,
-                map: map
+                map: globalMap
             });
         }
 
@@ -228,7 +245,7 @@ socket.on('livetweet', function(livetweet) {
 
         marker = new google.maps.Marker({
             position: myLatlng,
-            map: map,
+            map: globalMap,
             animation: google.maps.Animation.DROP,
             icon: markerIcon,
             title: livetweet.tweet.twitterHandle
@@ -351,9 +368,8 @@ function updateSentimentResult(sentiment) {
     var percent3 = parseInt(negativeTweets / totalTweets * 100, 10);
     el3.firstChild.nodeValue = percent3;
 
-
-    console.log('-----------------Sentiments-------------');
-    console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
+    // console.log('-----------------Sentiments-------------');
+    // console.log("Positive: " + positiveTweets + " Neutral: " + neutralTweets + "  Negative: " + negativeTweets);
 }
 
 
@@ -369,3 +385,47 @@ function getSentimentColor(sentiment) {
             return "#FFFFFF";
     }
 }
+
+var infowindow;
+socket.on('findTrendsResult', function(results) {
+    if (infowindow) {
+        infowindow.close();
+    }
+    var data = results.data[0];
+    var placeName = data.locations[0].name;
+    var trends = data.trends;
+    var findLatLongURL = "http://maps.googleapis.com/maps/api/geocode/json?address=" + placeName + "&sensor=false";
+    $.get(findLatLongURL, {}, function(data) {
+        // console.log("Get callback");
+        // console.log(data);
+        var location = data.results[0].geometry.location; //Location contains lat, lng
+        var myLatlng = new google.maps.LatLng(location.lat, location.lng); //Twitter provides longitude first and then latitude
+
+        var contentString = '<div id="content" style="max-height: 125px;">'+
+          '<p id="firstHeading" class="firstHeading"><bold style="color: #6600CC"> Trends at ' + placeName + '</bold></p>'+
+          '<div id="bodyContent">'+
+                '<ul>';
+
+        var count = 0;
+        for (var i = 0; i < trends.length; i++ ) {
+            if (trends[i].tweet_volume != null) {
+                var listElement = '<li><a href="' + trends[i].url + '" target="_blank">' + trends[i].name + '</a></li>';
+                contentString += listElement;
+
+                if (++count == 3) {
+                    break;
+                }
+            }
+        }
+
+        contentString += '</ul></div></div>';
+
+        infowindow = new google.maps.InfoWindow({
+            content: contentString,
+            position: myLatlng
+        });
+
+        infowindow.open(globalMap);
+    });
+
+});

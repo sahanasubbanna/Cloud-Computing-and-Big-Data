@@ -44,7 +44,8 @@ var T = new twit({
     consumer_secret: (process.env.twitterConsumerSecret || keys.twitterKeys.consumerSecret),
     access_token: (process.env.twitterAccessToken || keys.twitterKeys.accessToken),
     access_token_secret: (process.env.twitterAccessTokenSecret || keys.twitterKeys.accessTokenSecret)
-})
+});
+
 
 //Socket.io
 var io = require('socket.io').listen(server);
@@ -261,6 +262,20 @@ io.sockets.on('connection', function(socket) {
             });
         });
     });
+
+
+    socket.on('findTrends', function(query) {
+        var placeWOEID = query.placeWOEID;
+        T.get('trends/place', { id: placeWOEID }, function(err, data, res) {
+            // console.log("Result from the trends API");
+            // console.log(data[0]);
+            socket.emit('findTrendsResult', {
+                data: data
+            });
+        });
+    });
+
+
 });
 
 
